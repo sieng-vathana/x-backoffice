@@ -1,4 +1,4 @@
-﻿apiVersion: apps/v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: x-backoffice
@@ -18,6 +18,8 @@ spec:
         app: x-backoffice
     spec:
       automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: x-backoffice
           image: ghcr.io/sieng-vathana/x-backoffice:main
