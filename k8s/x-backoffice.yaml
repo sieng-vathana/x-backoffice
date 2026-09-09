@@ -72,10 +72,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - admin.learner-teach.online
-      secretName: x-backoffice-admin-tls
+        - backoffice.learner-teach.online
+      secretName: x-backoffice-tls
   rules:
-    - host: admin.learner-teach.online
+    - host: backoffice.learner-teach.online
       http:
         paths:
           - path: /
