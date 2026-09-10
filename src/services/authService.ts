@@ -1,8 +1,9 @@
-﻿import { api } from '../lib/api'
+import { api } from '../lib/api'
 import { readStoredValue, writeStoredValue, removeStoredValue } from '../lib/storage'
 import type { ApiResponse, AuthenticatedUser, SignInInput } from '../types/auth'
 
 const AUTH_USER_KEY = 'x_backoffice_user'
+export const AUTH_TOKEN_KEY = 'x_backoffice_token'
 
 interface BackendAuthData {
   user?: {
@@ -12,6 +13,7 @@ interface BackendAuthData {
     permissions?: string[]
   }
   accessToken?: string
+  refreshToken?: string
 }
 
 function mapUser(data: BackendAuthData['user']): AuthenticatedUser {
@@ -38,6 +40,10 @@ export const authService = {
     return readStoredValue<AuthenticatedUser | null>(AUTH_USER_KEY, null)
   },
 
+  getStoredToken(): string | null {
+    return readStoredValue<string | null>(AUTH_TOKEN_KEY, null)
+  },
+
   async login(input: SignInInput): Promise<AuthenticatedUser> {
     const res = await api.request<ApiResponse<BackendAuthData>>('/auth/login', {
       method: 'POST',
@@ -46,6 +52,10 @@ export const authService = {
 
     if (!res.data?.user) {
       throw new Error(res.message || 'Invalid credentials or user not returned.')
+    }
+
+    if (res.data.accessToken) {
+      writeStoredValue(AUTH_TOKEN_KEY, res.data.accessToken)
     }
 
     const user = mapUser(res.data.user)
@@ -59,6 +69,9 @@ export const authService = {
         method: 'POST',
       })
       if (res.data?.user) {
+        if (res.data.accessToken) {
+          writeStoredValue(AUTH_TOKEN_KEY, res.data.accessToken)
+        }
         const user = mapUser(res.data.user)
         writeStoredValue(AUTH_USER_KEY, user)
         return user
@@ -76,6 +89,7 @@ export const authService = {
       })
     } finally {
       removeStoredValue(AUTH_USER_KEY)
+      removeStoredValue(AUTH_TOKEN_KEY)
     }
   },
 }

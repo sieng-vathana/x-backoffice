@@ -1,4 +1,4 @@
-﻿export class ApiError extends Error {
+export class ApiError extends Error {
   public readonly status?: number
   public readonly details?: unknown
   constructor(message: string, status?: number, details?: unknown) {
@@ -106,4 +106,17 @@ export class ApiClient {
   }
 }
 
-export const api = new ApiClient({ baseUrl: API_BASE_URL })
+const getStoredToken = (): string | null => {
+  try {
+    const raw = localStorage.getItem('x_backoffice_token')
+    if (!raw) return null
+    return raw.replace(/^"|"$/g, '')
+  } catch {
+    return null
+  }
+}
+
+export const api = new ApiClient({
+  baseUrl: API_BASE_URL,
+  getToken: getStoredToken,
+})
