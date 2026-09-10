@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { storeService } from '../services/storeService'
 import { Badge } from '../components/ui/Badge'
@@ -123,16 +123,16 @@ export const StoresPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Stores & Merchants Directory</h1>
-        <p className="text-xs text-slate-500 mt-1">
-          Complete platform registry of merchant stores, their operation status, and marketplace exposure settings.
+        <h1 className="text-xl font-semibold text-zinc-900 tracking-tight">Stores & Merchants</h1>
+        <p className="text-xs text-zinc-500 mt-0.5">
+          Platform registry of merchant stores, operation status, and marketplace exposure settings.
         </p>
       </div>
 
       {/* Filter Tabs & Search */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+      <div className="bg-white p-3.5 rounded-xl border border-zinc-200 shadow-2xs space-y-3">
         {/* Filter Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-100">
+        <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b border-zinc-100">
           {[
             { id: 'ALL', label: 'All Stores', count: allStores.length },
             {
@@ -159,16 +159,16 @@ export const StoresPage: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition flex items-center gap-1.5 ${
                 activeTab === tab.id
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  ? 'bg-zinc-900 text-white shadow-2xs'
+                  : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
               }`}
             >
               <span>{tab.label}</span>
               <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                  activeTab === tab.id ? 'bg-indigo-700 text-white' : 'bg-slate-200/70 text-slate-700'
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium ${
+                  activeTab === tab.id ? 'bg-zinc-800 text-zinc-200' : 'bg-zinc-100 text-zinc-600'
                 }`}
               >
                 {tab.count}
@@ -178,101 +178,101 @@ export const StoresPage: React.FC = () => {
         </div>
 
         {/* Search Bar */}
-        <div className="flex items-center gap-3">
-          <i className="ri-search-line text-slate-400 text-base" />
+        <div className="flex items-center gap-2.5">
+          <i className="ri-search-line text-zinc-400 text-sm pl-1" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search stores by name, code, business ID, or city..."
-            className="w-full text-xs text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none"
+            className="w-full text-xs text-zinc-900 placeholder:text-zinc-400 bg-transparent focus:outline-none"
           />
           {search && (
-            <button onClick={() => setSearch('')} className="text-slate-400 hover:text-slate-600">
-              <i className="ri-close-circle-fill text-sm" />
+            <button onClick={() => setSearch('')} className="text-zinc-400 hover:text-zinc-600 text-xs px-1">
+              <i className="ri-close-circle-fill" />
             </button>
           )}
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-xl border border-zinc-200 shadow-2xs overflow-hidden">
         {isLoading ? (
-          <div className="p-16 text-center text-slate-400">
-            <i className="ri-loader-4-line text-3xl animate-spin text-indigo-500 inline-block mb-3" />
-            <div className="text-xs font-semibold">Loading stores directory...</div>
+          <div className="p-16 text-center text-zinc-400">
+            <i className="ri-loader-4-line text-2xl animate-spin text-zinc-500 inline-block mb-2" />
+            <div className="text-xs font-medium">Loading stores directory...</div>
           </div>
         ) : filteredStores.length === 0 ? (
-          <div className="p-16 text-center text-slate-500">
-            <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto text-2xl mb-3">
+          <div className="p-16 text-center text-zinc-500">
+            <div className="w-10 h-10 rounded-full bg-zinc-100 text-zinc-400 flex items-center justify-center mx-auto text-xl mb-2">
               <i className="ri-store-2-line" />
             </div>
-            <h3 className="text-sm font-bold text-slate-900">No Stores Found</h3>
-            <p className="text-xs text-slate-400 max-w-xs mx-auto mt-1">
+            <h3 className="text-xs font-semibold text-zinc-900">No Stores Found</h3>
+            <p className="text-xs text-zinc-400 max-w-xs mx-auto mt-0.5">
               No stores matching your filter criteria.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50/80 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-100">
+              <thead className="bg-zinc-50/75 text-zinc-500 font-medium text-[11px] uppercase tracking-wider border-b border-zinc-200">
                 <tr>
-                  <th className="px-6 py-3.5">Store / Business</th>
-                  <th className="px-6 py-3.5">Type & City</th>
-                  <th className="px-6 py-3.5">Marketplace Status</th>
-                  <th className="px-6 py-3.5">POS Status</th>
-                  <th className="px-6 py-3.5">Contact</th>
-                  <th className="px-6 py-3.5 text-right">Actions</th>
+                  <th className="px-5 py-2.5">Store / Business</th>
+                  <th className="px-5 py-2.5">Type & City</th>
+                  <th className="px-5 py-2.5">Marketplace Status</th>
+                  <th className="px-5 py-2.5">POS Status</th>
+                  <th className="px-5 py-2.5">Contact</th>
+                  <th className="px-5 py-2.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-zinc-100">
                 {filteredStores.map((store) => (
-                  <tr key={store.id} className="hover:bg-slate-50/50 transition">
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-slate-900 text-sm">{store.name}</div>
-                      <div className="text-slate-400 text-[11px] font-mono mt-0.5">
-                        Code: {store.code} • Business #{store.businessId}
+                  <tr key={store.id} className="hover:bg-zinc-50/60 transition-colors">
+                    <td className="px-5 py-3.5">
+                      <div className="font-medium text-zinc-900">{store.name}</div>
+                      <div className="text-zinc-400 text-[11px] font-mono mt-0.5">
+                        {store.code} • Business #{store.businessId}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-slate-700">{store.storeType || 'Retail'}</div>
-                      <div className="text-slate-500 text-[11px] mt-0.5">{store.city || 'Phnom Penh'}</div>
+                    <td className="px-5 py-3.5">
+                      <div className="text-zinc-800">{store.storeType || 'Retail'}</div>
+                      <div className="text-zinc-400 text-[11px] mt-0.5">{store.city || 'Phnom Penh'}</div>
                     </td>
-                    <td className="px-6 py-4">{renderStatusBadge(store.marketplaceStatus)}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-3.5">{renderStatusBadge(store.marketplaceStatus)}</td>
+                    <td className="px-5 py-3.5">
                       {store.status === 1 ? (
-                        <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                        <span className="text-[11px] font-medium text-emerald-700 flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                           Active
                         </span>
                       ) : (
-                        <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                        <span className="text-[11px] font-medium text-zinc-400 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-zinc-300" />
                           Inactive
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="font-mono text-slate-700 text-[11px]">{store.phone || '—'}</div>
-                      <div className="text-slate-500 text-[11px] truncate max-w-[140px]">
+                    <td className="px-5 py-3.5">
+                      <div className="font-mono text-zinc-700 text-[11px]">{store.phone || '—'}</div>
+                      <div className="text-zinc-400 text-[11px] truncate max-w-[140px]">
                         {store.email || '—'}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-5 py-3.5 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
                         <button
                           type="button"
                           onClick={() => setInspectStore(store)}
-                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition"
+                          className="px-2.5 py-1 rounded-md text-xs font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 transition"
                         >
-                          View
+                          Inspect
                         </button>
                         {store.marketplaceStatus === 'PENDING_REVIEW' && (
                           <>
                             <button
                               type="button"
                               onClick={() => setApproveTarget(store)}
-                              className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition"
+                              className="px-2.5 py-1 rounded-md text-xs font-medium text-white bg-zinc-900 hover:bg-zinc-800 transition shadow-2xs"
                             >
                               Approve
                             </button>
@@ -282,7 +282,7 @@ export const StoresPage: React.FC = () => {
                                 setRejectTarget(store)
                                 setRejectReason('')
                               }}
-                              className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition"
+                              className="px-2.5 py-1 rounded-md text-xs font-medium text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 transition shadow-2xs"
                             >
                               Reject
                             </button>
@@ -303,15 +303,15 @@ export const StoresPage: React.FC = () => {
         <Modal
           isOpen={true}
           onClose={() => setInspectStore(null)}
-          title={`Store: ${inspectStore.name}`}
+          title={inspectStore.name}
           subtitle={`Store Code: ${inspectStore.code} • Business #${inspectStore.businessId}`}
           maxWidth="2xl"
         >
-          <div className="space-y-6">
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+          <div className="space-y-5">
+            <div className="p-3.5 rounded-lg bg-zinc-50 border border-zinc-200 flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-slate-900 block">Marketplace Status</span>
-                <span className="text-[11px] text-slate-500">
+                <span className="text-xs font-medium text-zinc-900 block">Marketplace Status</span>
+                <span className="text-[11px] text-zinc-500">
                   {inspectStore.marketplaceApprovedAt
                     ? `Approved on ${new Date(inspectStore.marketplaceApprovedAt).toLocaleDateString()}`
                     : inspectStore.marketplaceAppliedAt
@@ -323,52 +323,52 @@ export const StoresPage: React.FC = () => {
             </div>
 
             {inspectStore.rejectionReason && (
-              <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs">
-                <span className="font-bold text-rose-900 block">Rejection Feedback</span>
+              <div className="p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-xs">
+                <span className="font-medium text-rose-900 block">Rejection Feedback</span>
                 <span className="text-rose-700 mt-0.5 block">{inspectStore.rejectionReason}</span>
               </div>
             )}
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 text-xs">
               <div>
-                <span className="text-slate-400 block text-[10px] font-bold uppercase">Store Name</span>
-                <span className="text-slate-900 font-bold">{inspectStore.name}</span>
+                <span className="text-zinc-400 block text-[10px] font-medium uppercase tracking-wider">Store Name</span>
+                <span className="text-zinc-900 font-medium">{inspectStore.name}</span>
               </div>
               <div>
-                <span className="text-slate-400 block text-[10px] font-bold uppercase">Store Code</span>
-                <span className="text-slate-800 font-mono font-bold">{inspectStore.code}</span>
+                <span className="text-zinc-400 block text-[10px] font-medium uppercase tracking-wider">Store Code</span>
+                <span className="text-zinc-800 font-mono">{inspectStore.code}</span>
               </div>
               <div>
-                <span className="text-slate-400 block text-[10px] font-bold uppercase">Business ID</span>
-                <span className="text-slate-800 font-semibold">#{inspectStore.businessId}</span>
+                <span className="text-zinc-400 block text-[10px] font-medium uppercase tracking-wider">Business ID</span>
+                <span className="text-zinc-800">#{inspectStore.businessId}</span>
               </div>
               <div>
-                <span className="text-slate-400 block text-[10px] font-bold uppercase">Phone</span>
-                <span className="text-slate-800 font-mono font-semibold">{inspectStore.phone || 'N/A'}</span>
+                <span className="text-zinc-400 block text-[10px] font-medium uppercase tracking-wider">Phone</span>
+                <span className="text-zinc-800 font-mono">{inspectStore.phone || 'N/A'}</span>
               </div>
               <div>
-                <span className="text-slate-400 block text-[10px] font-bold uppercase">Email</span>
-                <span className="text-slate-800 font-semibold">{inspectStore.email || 'N/A'}</span>
+                <span className="text-zinc-400 block text-[10px] font-medium uppercase tracking-wider">Email</span>
+                <span className="text-zinc-800">{inspectStore.email || 'N/A'}</span>
               </div>
               <div>
-                <span className="text-slate-400 block text-[10px] font-bold uppercase">Website</span>
-                <span className="text-slate-800 font-semibold">{inspectStore.website || 'N/A'}</span>
+                <span className="text-zinc-400 block text-[10px] font-medium uppercase tracking-wider">Website</span>
+                <span className="text-zinc-800">{inspectStore.website || 'N/A'}</span>
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-xs space-y-1">
-              <span className="text-slate-400 font-bold uppercase text-[10px] block">Address</span>
-              <div className="text-slate-800 font-medium">
+            <div className="p-3.5 rounded-lg bg-zinc-50 border border-zinc-200 text-xs space-y-1">
+              <span className="text-zinc-400 font-medium uppercase text-[10px] tracking-wider block">Address</span>
+              <div className="text-zinc-900 font-medium">
                 {inspectStore.addressLine1 || 'No address provided'}
                 {inspectStore.addressLine2 ? `, ${inspectStore.addressLine2}` : ''}
               </div>
-              <div className="text-slate-500 text-[11px]">
+              <div className="text-zinc-500 text-[11px]">
                 {inspectStore.city || 'Phnom Penh'}, {inspectStore.stateProvince || 'Phnom Penh'},{' '}
                 {inspectStore.countryCode || 'KHM'}
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-zinc-100">
               {inspectStore.marketplaceStatus === 'PENDING_REVIEW' && (
                 <>
                   <button
@@ -377,14 +377,14 @@ export const StoresPage: React.FC = () => {
                       setRejectTarget(inspectStore)
                       setRejectReason('')
                     }}
-                    className="px-4 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200"
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-rose-700 bg-white border border-rose-200 hover:bg-rose-50"
                   >
                     Reject
                   </button>
                   <button
                     type="button"
                     onClick={() => setApproveTarget(inspectStore)}
-                    className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700"
+                    className="px-4 py-1.5 rounded-lg text-xs font-medium text-white bg-zinc-900 hover:bg-zinc-800"
                   >
                     Approve Store
                   </button>
@@ -393,7 +393,7 @@ export const StoresPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setInspectStore(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200"
+                className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-zinc-700 bg-zinc-100 hover:bg-zinc-200"
               >
                 Close
               </button>
@@ -410,7 +410,7 @@ export const StoresPage: React.FC = () => {
           onConfirm={() => approveMutation.mutate(approveTarget.id)}
           title="Approve Store for Marketplace"
           message={`Are you sure you want to approve "${approveTarget.name}"?`}
-          confirmText="Yes, Approve"
+          confirmText="Approve Store"
           variant="primary"
           isLoading={approveMutation.isPending}
         />
@@ -435,7 +435,7 @@ export const StoresPage: React.FC = () => {
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               placeholder="Reason for rejection..."
-              className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 min-h-[80px]"
+              className="w-full text-xs p-2.5 rounded-lg border border-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 min-h-[80px]"
             />
           </div>
         </ConfirmDialog>

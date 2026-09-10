@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from 'react'
+import React, { useEffect } from 'react'
 
 interface ModalProps {
   isOpen: boolean
@@ -39,25 +39,25 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity" onClick={onClose} />
       <div className="min-h-full flex items-center justify-center p-4">
         <div
-          className={`relative bg-white rounded-2xl shadow-2xl border border-slate-100 w-full ${widthMap[maxWidth]} overflow-hidden transform transition-all`}
+          className={`relative bg-white rounded-xl shadow-xl border border-zinc-200 w-full ${widthMap[maxWidth]} overflow-hidden transform transition-all`}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 bg-zinc-50/50">
             <div>
-              <h3 className="text-base font-bold text-slate-900">{title}</h3>
-              {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
+              <h3 className="text-sm font-semibold text-zinc-900">{title}</h3>
+              {subtitle && <p className="text-xs text-zinc-500 mt-0.5">{subtitle}</p>}
             </div>
             <button
               onClick={onClose}
-              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+              className="p-1 rounded-md text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition"
             >
-              <i className="ri-close-line text-xl" />
+              <i className="ri-close-line text-lg" />
             </button>
           </div>
-          <div className="p-6 max-h-[80vh] overflow-y-auto">{children}</div>
+          <div className="p-6 max-h-[82vh] overflow-y-auto">{children}</div>
         </div>
       </div>
     </div>

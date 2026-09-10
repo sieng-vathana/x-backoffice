@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useState, useCallback } from 'react'
+import React, { createContext, useContext, useState, useCallback } from 'react'
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning'
 
@@ -48,33 +48,25 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-lg border text-sm font-medium transition-all transform animate-in slide-in-from-bottom-2 ${
-              t.type === 'success'
-                ? 'bg-emerald-900/90 text-white border-emerald-700 backdrop-blur-md'
-                : t.type === 'error'
-                ? 'bg-rose-900/90 text-white border-rose-700 backdrop-blur-md'
-                : t.type === 'warning'
-                ? 'bg-amber-900/90 text-white border-amber-700 backdrop-blur-md'
-                : 'bg-slate-900/90 text-white border-slate-700 backdrop-blur-md'
-            }`}
+            className="pointer-events-auto flex items-start gap-2.5 p-3 rounded-lg bg-white border border-zinc-200 shadow-md text-xs font-medium text-zinc-900 transition-all animate-in slide-in-from-bottom-2"
           >
             <i
-              className={`text-lg shrink-0 ${
+              className={`text-base shrink-0 mt-0.5 ${
                 t.type === 'success'
-                  ? 'ri-checkbox-circle-fill text-emerald-400'
+                  ? 'ri-checkbox-circle-fill text-emerald-600'
                   : t.type === 'error'
-                  ? 'ri-error-warning-fill text-rose-400'
+                  ? 'ri-error-warning-fill text-rose-600'
                   : t.type === 'warning'
-                  ? 'ri-alert-fill text-amber-400'
-                  : 'ri-information-fill text-sky-400'
+                  ? 'ri-alert-fill text-amber-600'
+                  : 'ri-information-fill text-zinc-600'
               }`}
             />
-            <div className="flex-1 text-xs leading-relaxed">{t.message}</div>
+            <div className="flex-1 text-xs text-zinc-700 leading-snug">{t.message}</div>
             <button
               onClick={() => removeToast(t.id)}
-              className="text-white/60 hover:text-white transition-colors"
+              className="text-zinc-400 hover:text-zinc-600 transition-colors p-0.5"
             >
-              <i className="ri-close-line text-base" />
+              <i className="ri-close-line text-sm" />
             </button>
           </div>
         ))}

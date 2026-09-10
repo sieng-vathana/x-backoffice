@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react'
+import React, { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
@@ -60,49 +60,49 @@ export const AppLayout: React.FC = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-[#f8f9fa] flex text-zinc-800 antialiased">
       {/* Mobile Backdrop */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/60 lg:hidden backdrop-blur-xs"
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden backdrop-blur-xs"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 transition-transform duration-300 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-60 bg-white text-zinc-700 flex flex-col border-r border-zinc-200 transition-transform duration-200 lg:static lg:translate-x-0 ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Brand Header */}
-        <div className="h-16 px-6 flex items-center justify-between border-b border-slate-800/80 bg-slate-950/40">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-500/20">
-              <i className="ri-shield-keyhole-line text-lg" />
+        <div className="h-14 px-4 flex items-center justify-between border-b border-zinc-200/80">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-md bg-zinc-900 text-white flex items-center justify-center font-bold text-xs tracking-tight shadow-xs">
+              X
             </div>
-            <div>
-              <div className="font-extrabold text-sm tracking-wide text-white flex items-center gap-1.5">
-                X PLATFORM
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                  ADMIN
+            <div className="flex flex-col">
+              <div className="font-semibold text-xs text-zinc-900 leading-none flex items-center gap-1.5">
+                Backoffice
+                <span className="px-1 py-0.2 rounded text-[9px] font-mono font-medium bg-zinc-100 text-zinc-600 border border-zinc-200">
+                  PROD
                 </span>
               </div>
-              <div className="text-[11px] text-slate-400 font-medium">Back-Office Console</div>
+              <span className="text-[10px] text-zinc-400 mt-0.5">Platform Console</span>
             </div>
           </div>
           <button
-            className="lg:hidden text-slate-400 hover:text-white"
+            className="lg:hidden p-1 rounded-md text-zinc-400 hover:text-zinc-700"
             onClick={() => setMobileMenuOpen(false)}
           >
-            <i className="ri-close-line text-xl" />
+            <i className="ri-close-line text-lg" />
           </button>
         </div>
 
-        {/* Navigation Section */}
-        <div className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
-          <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Platform Management
+        {/* Navigation */}
+        <nav className="flex-1 py-4 px-2.5 space-y-0.5 overflow-y-auto">
+          <div className="px-2 pb-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-400">
+            Operations
           </div>
           {navItems.map((item) => (
             <NavLink
@@ -111,22 +111,22 @@ export const AppLayout: React.FC = () => {
               end={item.end}
               onClick={() => setMobileMenuOpen(false)}
               className={({ isActive }) =>
-                `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                `flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                   isActive
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-zinc-100 text-zinc-900 font-semibold'
+                    : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <div className="flex items-center gap-3">
-                    <i className={`text-base ${isActive ? item.activeIcon : item.icon}`} />
+                  <div className="flex items-center gap-2.5">
+                    <i className={`text-base leading-none ${isActive ? item.activeIcon : item.icon} ${isActive ? 'text-zinc-900' : 'text-zinc-400'}`} />
                     <span>{item.label}</span>
                   </div>
                   {item.badge && (
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold animate-pulse ${item.badgeColor}`}
+                      className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-200"
                     >
                       {item.badge}
                     </span>
@@ -135,52 +135,48 @@ export const AppLayout: React.FC = () => {
               )}
             </NavLink>
           ))}
-        </div>
+        </nav>
 
         {/* User Card & Sign Out */}
-        <div className="p-3 border-t border-slate-800 bg-slate-950/40">
-          <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/50 mb-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 flex items-center justify-center font-bold text-xs">
+        <div className="p-2.5 border-t border-zinc-200/80 bg-zinc-50/50">
+          <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-white transition border border-transparent hover:border-zinc-200">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-md bg-zinc-200 text-zinc-700 flex items-center justify-center font-medium text-xs shrink-0">
                 {user?.username?.substring(0, 2).toUpperCase() || 'AD'}
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold text-white truncate">
+              <div className="min-w-0">
+                <div className="text-xs font-medium text-zinc-900 truncate">
                   {user?.fullName || user?.username || 'Administrator'}
                 </div>
-                <div className="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                  Online (Admin)
-                </div>
+                <div className="text-[10px] text-zinc-400 truncate">Platform Admin</div>
               </div>
             </div>
+            <button
+              onClick={handleSignOut}
+              title="Sign Out"
+              className="p-1.5 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition"
+            >
+              <i className="ri-logout-box-r-line text-sm" />
+            </button>
           </div>
-
-          <button
-            onClick={handleSignOut}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-300 hover:text-white hover:bg-rose-950/40 border border-rose-900/30 transition"
-          >
-            <i className="ri-logout-box-r-line" />
-            Sign Out
-          </button>
         </div>
       </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200/80 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30 shadow-xs">
-          <div className="flex items-center gap-4">
+        <header className="h-14 bg-white border-b border-zinc-200 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100"
+              className="lg:hidden p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100"
             >
-              <i className="ri-menu-2-line text-xl" />
+              <i className="ri-menu-2-line text-lg" />
             </button>
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <span className="font-medium text-slate-900">Control Center</span>
-              <span className="text-slate-300">/</span>
-              <span className="text-slate-500">Operations & Moderation</span>
+            <div className="flex items-center gap-2 text-xs text-zinc-400 font-medium">
+              <span>Backoffice</span>
+              <span>/</span>
+              <span className="text-zinc-700 font-medium">Control Center</span>
             </div>
           </div>
 
@@ -188,25 +184,23 @@ export const AppLayout: React.FC = () => {
             {pendingCount > 0 && (
               <NavLink
                 to="/approvals"
-                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200/80 hover:bg-amber-100 transition shadow-xs"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200/80 hover:bg-amber-100 transition shadow-2xs"
               >
-                <i className="ri-notification-3-line text-amber-600 animate-bounce" />
-                <span>{pendingCount} Merchant Application{pendingCount > 1 ? 's' : ''} Pending</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                <span>{pendingCount} Pending Approval{pendingCount > 1 ? 's' : ''}</span>
               </NavLink>
             )}
 
-            <div className="h-6 w-px bg-slate-200 hidden sm:block" />
-
-            <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-xs text-slate-600">
-              <i className="ri-server-line text-indigo-500" />
-              <span className="font-semibold text-slate-800">Cluster: x-platform</span>
+            <div className="flex items-center gap-1.5 text-xs text-zinc-500 font-mono text-[11px] px-2 py-0.5 rounded border border-zinc-200 bg-zinc-50">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span>Live • 217.15.160.189</span>
             </div>
           </div>
         </header>
 
         {/* Page Container */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-8">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <Outlet />
           </div>
         </main>

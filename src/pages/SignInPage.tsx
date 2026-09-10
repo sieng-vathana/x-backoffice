@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react'
+import React, { useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
@@ -35,77 +35,67 @@ export const SignInPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background ambient lighting */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-indigo-500/10 via-purple-500/5 to-transparent pointer-events-none blur-3xl" />
-
-      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        <div className="flex justify-center">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-white shadow-xl shadow-indigo-500/30">
-            <i className="ri-shield-keyhole-line text-3xl" />
+    <div className="min-h-screen bg-[#f8f9fa] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="flex items-center justify-center gap-2.5">
+          <div className="w-9 h-9 rounded-lg bg-zinc-900 text-white flex items-center justify-center font-bold text-base shadow-xs">
+            X
           </div>
+          <span className="font-semibold text-lg tracking-tight text-zinc-900">
+            Backoffice Console
+          </span>
         </div>
-        <h2 className="mt-4 text-center text-2xl font-black text-white tracking-tight">
-          X Platform Back-Office
-        </h2>
-        <p className="mt-1 text-center text-xs text-slate-400 font-medium">
-          Marketplace Administration & Merchant Moderation
+        <p className="mt-2 text-center text-xs text-zinc-500">
+          Sign in to manage merchants, marketplace categories, and platform directory.
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10 px-4 sm:px-0">
-        <div className="bg-slate-800/80 backdrop-blur-xl py-8 px-6 sm:px-10 shadow-2xl rounded-2xl border border-slate-700/60">
-          <form className="space-y-5" onSubmit={handleSubmit}>
+      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-6 sm:px-8 shadow-xs rounded-xl border border-zinc-200">
+          <form className="space-y-4" onSubmit={handleSubmit}>
             {errMessage && (
-              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-                <i className="ri-error-warning-line text-base text-rose-400 shrink-0" />
+              <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+                <i className="ri-error-warning-line text-sm text-rose-600 shrink-0" />
                 <span>{errMessage}</span>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-medium text-zinc-700 mb-1">
                 Username
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <i className="ri-user-3-line text-sm" />
-                </div>
-                <input
-                  type="text"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter administrator username"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-900/80 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                />
-              </div>
+              <input
+                type="text"
+                required
+                autoFocus
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="e.g. admin"
+                className="w-full px-3 py-2 bg-white border border-zinc-300 rounded-lg text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 transition shadow-2xs"
+              />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <i className="ri-lock-2-line text-sm" />
-                </div>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-900/80 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                />
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-zinc-700">
+                  Password
+                </label>
               </div>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••••••"
+                className="w-full px-3 py-2 bg-white border border-zinc-300 rounded-lg text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 transition shadow-2xs"
+              />
             </div>
 
-            <div>
+            <div className="pt-1">
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-lg shadow-indigo-600/30 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition disabled:opacity-50"
+                className="w-full flex justify-center items-center gap-2 py-2.5 px-4 rounded-lg text-xs font-medium text-white bg-zinc-900 hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2 transition shadow-xs disabled:opacity-50"
               >
                 {submitting ? (
                   <>
@@ -113,24 +103,17 @@ export const SignInPage: React.FC = () => {
                     <span>Signing In...</span>
                   </>
                 ) : (
-                  <>
-                    <span>Sign In to Control Center</span>
-                    <i className="ri-arrow-right-line text-sm" />
-                  </>
+                  <span>Continue to Backoffice</span>
                 )}
               </button>
             </div>
           </form>
 
-          {/* Quick info note */}
-          <div className="mt-6 pt-5 border-t border-slate-700/60 text-[11px] text-slate-400 space-y-2">
-            <div className="flex items-center gap-2 text-slate-300 font-semibold">
-              <i className="ri-shield-check-line text-indigo-400" />
-              Role-Based Access
-            </div>
-            <p className="text-slate-400 leading-relaxed">
-              Restricted to users with <code className="text-indigo-300 font-mono bg-slate-900 px-1 py-0.5 rounded">platform:admin</code> or <code className="text-indigo-300 font-mono bg-slate-900 px-1 py-0.5 rounded">x-store:manage</code> platform privileges.
-            </p>
+          <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-400">
+            <span>Production Environment</span>
+            <span className="font-mono text-[10px] bg-zinc-100 px-1.5 py-0.5 rounded text-zinc-600">
+              x-platform
+            </span>
           </div>
         </div>
       </div>

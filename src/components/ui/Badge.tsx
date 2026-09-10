@@ -1,8 +1,8 @@
-﻿import React from 'react'
+import React from 'react'
 
 export interface BadgeProps {
   children: React.ReactNode
-  variant?: 'emerald' | 'amber' | 'rose' | 'slate' | 'indigo' | 'blue'
+  variant?: 'emerald' | 'amber' | 'rose' | 'slate' | 'zinc' | 'indigo' | 'blue'
   dot?: boolean
   className?: string
 }
@@ -17,23 +17,25 @@ export const Badge: React.FC<BadgeProps> = ({
     emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
     amber: 'bg-amber-50 text-amber-700 border-amber-200/80',
     rose: 'bg-rose-50 text-rose-700 border-rose-200/80',
-    slate: 'bg-slate-100 text-slate-700 border-slate-200',
-    indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
-    blue: 'bg-blue-50 text-blue-700 border-blue-200/80',
+    slate: 'bg-zinc-100 text-zinc-700 border-zinc-200',
+    zinc: 'bg-zinc-100 text-zinc-700 border-zinc-200',
+    indigo: 'bg-zinc-100 text-zinc-800 border-zinc-300 font-medium',
+    blue: 'bg-sky-50 text-sky-700 border-sky-200/80',
   }
 
   const dotStyles = {
     emerald: 'bg-emerald-500',
     amber: 'bg-amber-500',
     rose: 'bg-rose-500',
-    slate: 'bg-slate-400',
-    indigo: 'bg-indigo-500',
-    blue: 'bg-blue-500',
+    slate: 'bg-zinc-400',
+    zinc: 'bg-zinc-400',
+    indigo: 'bg-zinc-600',
+    blue: 'bg-sky-500',
   }
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${styles[variant]} ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium border ${styles[variant]} ${className}`}
     >
       {dot && <span className={`w-1.5 h-1.5 rounded-full ${dotStyles[variant]}`} />}
       {children}
