@@ -6,6 +6,28 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useToast } from '../context/ToastContext'
 import type { BrandResponse, CreateBrandRequest } from '../types/brand'
 
+const BrandLogo: React.FC<{
+  logoUrl?: string
+  name: string
+}> = ({ logoUrl, name }) => {
+  const [hasError, setHasError] = useState(false)
+
+  return (
+    <div className="w-9 h-9 rounded-lg bg-zinc-100 border border-zinc-200 overflow-hidden flex items-center justify-center shrink-0 p-1">
+      {logoUrl && !hasError ? (
+        <img
+          src={logoUrl}
+          alt={name}
+          className="w-full h-full object-contain"
+          onError={() => setHasError(true)}
+        />
+      ) : (
+        <i className="ri-price-tag-3-line text-zinc-500 text-base" />
+      )}
+    </div>
+  )
+}
+
 export const BrandsPage: React.FC = () => {
   const queryClient = useQueryClient()
   const { success, error } = useToast()
@@ -157,20 +179,7 @@ export const BrandsPage: React.FC = () => {
                   <tr key={brand.id} className="hover:bg-zinc-50/60 transition-colors">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-zinc-100 border border-zinc-200 overflow-hidden flex items-center justify-center shrink-0 p-1">
-                          {brand.logoUrl ? (
-                            <img
-                              src={brand.logoUrl}
-                              alt={brand.name}
-                              className="w-full h-full object-contain"
-                              onError={(e) => {
-                                ;(e.target as HTMLElement).style.display = 'none'
-                              }}
-                            />
-                          ) : (
-                            <i className="ri-price-tag-3-fill text-zinc-400 text-base" />
-                          )}
-                        </div>
+                        <BrandLogo logoUrl={brand.logoUrl} name={brand.name} />
                         <div>
                           <span className="font-medium text-zinc-900">{brand.name}</span>
                           <span className="text-[11px] font-mono text-zinc-400 block mt-0.2">ID #{brand.id}</span>

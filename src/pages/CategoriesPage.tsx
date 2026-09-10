@@ -7,6 +7,42 @@ import { Badge } from '../components/ui/Badge'
 import { useToast } from '../context/ToastContext'
 import type { CreateCategoryRequest, MarketplaceCategoryResponse } from '../types/category'
 
+const CategoryThumbnail: React.FC<{
+  image?: string
+  name: string
+  code?: string
+}> = ({ image, name, code }) => {
+  const [hasError, setHasError] = useState(false)
+
+  const getFallbackIcon = () => {
+    const key = `${code || ''} ${name || ''}`.toUpperCase()
+    if (key.includes('CAFE') || key.includes('BEVERAGE') || key.includes('COFFEE') || key.includes('DRINK')) return 'ri-cup-line'
+    if (key.includes('RESTAURANT') || key.includes('FOOD') || key.includes('DINING')) return 'ri-restaurant-line'
+    if (key.includes('BAKERY') || key.includes('DESSERT') || key.includes('PASTRY')) return 'ri-cake-3-line'
+    if (key.includes('GROCERY') || key.includes('MINIMART') || key.includes('SUPERMARKET')) return 'ri-shopping-basket-2-line'
+    if (key.includes('FASHION') || key.includes('CLOTH') || key.includes('ACCESSOR')) return 'ri-t-shirt-line'
+    if (key.includes('PHARMACY') || key.includes('HEALTH') || key.includes('BEAUTY')) return 'ri-capsule-line'
+    if (key.includes('ELECTRONIC') || key.includes('TECH')) return 'ri-macbook-line'
+    if (key.includes('RETAIL') || key.includes('STORE')) return 'ri-store-2-line'
+    return 'ri-folder-line'
+  }
+
+  return (
+    <div className="w-9 h-9 rounded-lg bg-zinc-100 border border-zinc-200 overflow-hidden flex items-center justify-center shrink-0 p-1">
+      {image && !hasError ? (
+        <img
+          src={image}
+          alt={name}
+          className="w-full h-full object-contain"
+          onError={() => setHasError(true)}
+        />
+      ) : (
+        <i className={`${getFallbackIcon()} text-zinc-700 text-base`} />
+      )}
+    </div>
+  )
+}
+
 export const CategoriesPage: React.FC = () => {
   const queryClient = useQueryClient()
   const { success, error } = useToast()
@@ -158,20 +194,11 @@ export const CategoriesPage: React.FC = () => {
                   <tr key={category.id} className="hover:bg-zinc-50/60 transition-colors">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-zinc-100 border border-zinc-200 overflow-hidden flex items-center justify-center shrink-0">
-                          {category.image ? (
-                            <img
-                              src={category.image}
-                              alt={category.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                ;(e.target as HTMLElement).style.display = 'none'
-                              }}
-                            />
-                          ) : (
-                            <i className="ri-folder-fill text-zinc-400 text-base" />
-                          )}
-                        </div>
+                        <CategoryThumbnail
+                          image={category.image}
+                          name={category.name}
+                          code={category.code}
+                        />
                         <div>
                           <span className="font-medium text-zinc-900">{category.name}</span>
                           <span className="text-[11px] font-mono text-zinc-400 block mt-0.2">ID #{category.id}</span>
