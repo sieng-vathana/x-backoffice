@@ -8,6 +8,11 @@ export const storeService = {
     return res.data ?? []
   },
 
+  async getMarketplaceStoresNeedingChanges(): Promise<StoreResponse[]> {
+    const res = await api.request<ApiResponse<StoreResponse[]>>('/stores/marketplace/needs-changes')
+    return res.data ?? []
+  },
+
   async approveMarketplaceStore(id: number): Promise<StoreResponse> {
     const res = await api.request<ApiResponse<StoreResponse>>(`/stores/${id}/marketplace/approve`, {
       method: 'POST',
@@ -26,6 +31,17 @@ export const storeService = {
     })
     if (!res.data) {
       throw new Error(res.message || 'Failed to reject store.')
+    }
+    return res.data
+  },
+
+  async requestMarketplaceChanges(id: number, reason: string): Promise<StoreResponse> {
+    const res = await api.request<ApiResponse<StoreResponse>>(`/stores/${id}/marketplace/request-changes`, {
+      method: 'POST',
+      body: JSON.stringify({ reason } satisfies ReviewMarketplaceRequest),
+    })
+    if (!res.data) {
+      throw new Error(res.message || 'Failed to return application for updates.')
     }
     return res.data
   },

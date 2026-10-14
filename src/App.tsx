@@ -7,6 +7,7 @@ import { ApprovalsPage } from './pages/ApprovalsPage'
 import { StoresPage } from './pages/StoresPage'
 import { CategoriesPage } from './pages/CategoriesPage'
 import { BrandsPage } from './pages/BrandsPage'
+import { AdminOperationsPage } from './pages/AdminOperationsPage'
 import { SignInPage } from './pages/SignInPage'
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -50,6 +51,7 @@ export const App: React.FC = () => {
         <Route path="stores" element={<StoresPage />} />
         <Route path="categories" element={<CategoriesPage />} />
         <Route path="brands" element={<BrandsPage />} />
+        <Route path="operations/:section" element={<AdminOperationsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

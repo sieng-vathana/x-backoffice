@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { storeService } from '../../services/storeService'
@@ -7,6 +7,7 @@ import { storeService } from '../../services/storeService'
 export const AppLayout: React.FC = () => {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Query pending approvals count for sidebar badge
@@ -23,41 +24,36 @@ export const AppLayout: React.FC = () => {
     navigate('/sign-in')
   }
 
-  const navItems = [
-    {
-      to: '/',
-      label: 'Dashboard',
-      icon: 'ri-dashboard-3-line',
-      activeIcon: 'ri-dashboard-3-fill',
-      end: true,
-    },
-    {
-      to: '/approvals',
-      label: 'Merchant Approvals',
-      icon: 'ri-verified-badge-line',
-      activeIcon: 'ri-verified-badge-fill',
-      badge: pendingCount > 0 ? pendingCount : null,
-      badgeColor: 'bg-amber-500 text-white',
-    },
-    {
-      to: '/stores',
-      label: 'Stores Directory',
-      icon: 'ri-store-2-line',
-      activeIcon: 'ri-store-2-fill',
-    },
-    {
-      to: '/categories',
-      label: 'Platform Categories',
-      icon: 'ri-folder-shared-line',
-      activeIcon: 'ri-folder-shared-fill',
-    },
-    {
-      to: '/brands',
-      label: 'Global Brands',
-      icon: 'ri-price-tag-3-line',
-      activeIcon: 'ri-price-tag-3-fill',
-    },
+  const navGroups: { label: string; items: { to: string; label: string; icon: string; activeIcon: string; end?: boolean; badge?: number | null; preview?: boolean }[] }[] = [
+    { label: 'Workspace', items: [
+      { to: '/', label: 'Overview', icon: 'ri-dashboard-3-line', activeIcon: 'ri-dashboard-3-fill', end: true },
+      { to: '/operations/orders', label: 'Order control', icon: 'ri-shopping-bag-3-line', activeIcon: 'ri-shopping-bag-3-fill', preview: true },
+      { to: '/operations/reports', label: 'Platform reports', icon: 'ri-line-chart-line', activeIcon: 'ri-line-chart-fill', preview: true },
+    ] },
+    { label: 'Merchant network', items: [
+      { to: '/approvals', label: 'Merchant approvals', icon: 'ri-verified-badge-line', activeIcon: 'ri-verified-badge-fill', badge: pendingCount > 0 ? pendingCount : null },
+      { to: '/stores', label: 'Stores directory', icon: 'ri-store-2-line', activeIcon: 'ri-store-2-fill' },
+    ] },
+    { label: 'Marketplace catalog', items: [
+      { to: '/categories', label: 'Categories', icon: 'ri-folder-shared-line', activeIcon: 'ri-folder-shared-fill' },
+      { to: '/brands', label: 'Brands', icon: 'ri-price-tag-3-line', activeIcon: 'ri-price-tag-3-fill' },
+    ] },
+    { label: 'Customer & fulfillment', items: [
+      { to: '/operations/customers', label: 'Customers', icon: 'ri-user-heart-line', activeIcon: 'ri-user-heart-fill', preview: true },
+      { to: '/operations/delivery', label: 'Delivery operations', icon: 'ri-e-bike-2-line', activeIcon: 'ri-e-bike-2-fill', preview: true },
+    ] },
+    { label: 'Finance', items: [
+      { to: '/operations/payments', label: 'Payments & settlements', icon: 'ri-bank-card-line', activeIcon: 'ri-bank-card-fill', preview: true },
+    ] },
   ]
+
+  const routeLabels: Record<string, string> = {
+    '/': 'Overview', '/approvals': 'Merchant approvals', '/stores': 'Stores directory',
+    '/categories': 'Categories', '/brands': 'Brands', '/operations/orders': 'Order control',
+    '/operations/customers': 'Customers', '/operations/delivery': 'Delivery operations',
+    '/operations/payments': 'Payments & settlements', '/operations/reports': 'Platform reports',
+  }
+  const pageLabel = routeLabels[location.pathname] ?? 'Admin workspace'
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex text-zinc-800 antialiased">
@@ -71,7 +67,7 @@ export const AppLayout: React.FC = () => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-60 bg-white text-zinc-700 flex flex-col border-r border-zinc-200 transition-transform duration-200 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white text-zinc-700 flex flex-col border-r border-zinc-200 transition-transform duration-200 lg:static lg:translate-x-0 ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -85,10 +81,10 @@ export const AppLayout: React.FC = () => {
               <div className="font-semibold text-xs text-zinc-900 leading-none flex items-center gap-1.5">
                 Backoffice
                 <span className="px-1 py-0.2 rounded text-[9px] font-mono font-medium bg-zinc-100 text-zinc-600 border border-zinc-200">
-                  PROD
+                  ADMIN
                 </span>
               </div>
-              <span className="text-[10px] text-zinc-400 mt-0.5">Platform Console</span>
+              <span className="text-[10px] text-zinc-400 mt-0.5">Cambodia operations</span>
             </div>
           </div>
           <button
@@ -101,10 +97,9 @@ export const AppLayout: React.FC = () => {
 
         {/* Navigation */}
         <nav className="flex-1 py-4 px-2.5 space-y-0.5 overflow-y-auto">
-          <div className="px-2 pb-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-400">
-            Operations
-          </div>
-          {navItems.map((item) => (
+          {navGroups.map((group) => <section key={group.label} className="mb-4">
+            <div className="px-2 pb-1.5 text-[9px] font-semibold uppercase tracking-[.13em] text-zinc-400">{group.label}</div>
+            <div className="space-y-0.5">{group.items.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -122,19 +117,17 @@ export const AppLayout: React.FC = () => {
                 <>
                   <div className="flex items-center gap-2.5">
                     <i className={`text-base leading-none ${isActive ? item.activeIcon : item.icon} ${isActive ? 'text-zinc-900' : 'text-zinc-400'}`} />
-                    <span>{item.label}</span>
+                    <span className="truncate">{item.label}</span>
                   </div>
-                  {item.badge && (
-                    <span
-                      className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-200"
-                    >
-                      {item.badge}
-                    </span>
-                  )}
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {'preview' in item && item.preview && <span className="rounded bg-zinc-100 px-1 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-zinc-500">Preview</span>}
+                    {'badge' in item && item.badge && <span className="rounded-full border border-amber-200 bg-amber-100 px-1.5 py-0.2 text-[10px] font-semibold text-amber-800">{item.badge}</span>}
+                  </div>
                 </>
               )}
             </NavLink>
-          ))}
+          ))}</div>
+          </section>)}
         </nav>
 
         {/* User Card & Sign Out */}
@@ -176,7 +169,7 @@ export const AppLayout: React.FC = () => {
             <div className="flex items-center gap-2 text-xs text-zinc-400 font-medium">
               <span>Backoffice</span>
               <span>/</span>
-              <span className="text-zinc-700 font-medium">Control Center</span>
+              <span className="text-zinc-700 font-medium">{pageLabel}</span>
             </div>
           </div>
 
@@ -191,9 +184,9 @@ export const AppLayout: React.FC = () => {
               </NavLink>
             )}
 
-            <div className="flex items-center gap-1.5 text-xs text-zinc-500 font-mono text-[11px] px-2 py-0.5 rounded border border-zinc-200 bg-zinc-50">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span>Live • 217.15.160.189</span>
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-zinc-500 px-2 py-1 rounded border border-zinc-200 bg-zinc-50">
+              <i className="ri-time-line text-zinc-400" />
+              <span>Cambodia · GMT+7</span>
             </div>
           </div>
         </header>

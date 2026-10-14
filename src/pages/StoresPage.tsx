@@ -4,8 +4,11 @@ import { storeService } from '../services/storeService'
 import { Badge } from '../components/ui/Badge'
 import { Modal } from '../components/ui/Modal'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import { StoreReadinessPanel } from '../components/StoreReadinessPanel'
+import { RequestChangesDialog } from '../components/RequestChangesDialog'
 import { useToast } from '../context/ToastContext'
 import type { MarketplaceStatus, StoreResponse } from '../types/store'
+import { getStoreReadiness } from '../lib/storeReadiness'
 
 export const StoresPage: React.FC = () => {
   const queryClient = useQueryClient()
@@ -16,12 +19,18 @@ export const StoresPage: React.FC = () => {
   const [inspectStore, setInspectStore] = useState<StoreResponse | null>(null)
   const [approveTarget, setApproveTarget] = useState<StoreResponse | null>(null)
   const [rejectTarget, setRejectTarget] = useState<StoreResponse | null>(null)
+  const [requestChangesTarget, setRequestChangesTarget] = useState<StoreResponse | null>(null)
   const [rejectReason, setRejectReason] = useState('')
 
   // Load pending stores
   const { data: pendingStores = [], isLoading: loadingPending } = useQuery({
     queryKey: ['pendingStores'],
     queryFn: () => storeService.getPendingMarketplaceStores(),
+  })
+
+  const { data: storesNeedingChanges = [], isLoading: loadingChanges } = useQuery({
+    queryKey: ['marketplaceStoresNeedingChanges'],
+    queryFn: () => storeService.getMarketplaceStoresNeedingChanges(),
   })
 
   // Load stores from business 1 (and general stores list)
@@ -34,17 +43,19 @@ export const StoresPage: React.FC = () => {
   const allStores = useMemo(() => {
     const map = new Map<number, StoreResponse>()
     pendingStores.forEach((s) => map.set(s.id, s))
+    storesNeedingChanges.forEach((s) => map.set(s.id, s))
     businessStores.content.forEach((s) => {
       if (!map.has(s.id)) map.set(s.id, s)
     })
     return Array.from(map.values())
-  }, [pendingStores, businessStores])
+  }, [pendingStores, storesNeedingChanges, businessStores])
 
   const filteredStores = useMemo(() => {
     return allStores.filter((store) => {
       const matchTab =
         activeTab === 'ALL' ||
         (activeTab === 'PENDING' && store.marketplaceStatus === 'PENDING_REVIEW') ||
+        (activeTab === 'NEEDS_CHANGES' && store.marketplaceStatus === 'NEEDS_CHANGES') ||
         (activeTab === 'APPROVED' && store.marketplaceStatus === 'APPROVED') ||
         (activeTab === 'REJECTED' && store.marketplaceStatus === 'REJECTED') ||
         (activeTab === 'NOT_LISTED' && (store.marketplaceStatus === 'NOT_LISTED' || !store.marketplaceStatus))
@@ -69,6 +80,7 @@ export const StoresPage: React.FC = () => {
       setApproveTarget(null)
       if (inspectStore?.id === updated.id) setInspectStore(updated)
       queryClient.invalidateQueries({ queryKey: ['pendingStores'] })
+      queryClient.invalidateQueries({ queryKey: ['marketplaceStoresNeedingChanges'] })
       queryClient.invalidateQueries({ queryKey: ['businessStores'] })
     },
     onError: (err: any) => error(err.message || 'Failed to approve.'),
@@ -83,10 +95,29 @@ export const StoresPage: React.FC = () => {
       setRejectReason('')
       if (inspectStore?.id === updated.id) setInspectStore(updated)
       queryClient.invalidateQueries({ queryKey: ['pendingStores'] })
+      queryClient.invalidateQueries({ queryKey: ['marketplaceStoresNeedingChanges'] })
       queryClient.invalidateQueries({ queryKey: ['businessStores'] })
     },
     onError: (err: any) => error(err.message || 'Failed to reject.'),
   })
+
+  const requestChangesMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason: string }) => storeService.requestMarketplaceChanges(id, reason),
+    onSuccess: (updated) => {
+      success(`Update request sent to "${updated.name}".`)
+      setRequestChangesTarget(null)
+      if (inspectStore?.id === updated.id) setInspectStore(null)
+      queryClient.invalidateQueries({ queryKey: ['pendingStores'] })
+      queryClient.invalidateQueries({ queryKey: ['marketplaceStoresNeedingChanges'] })
+      queryClient.invalidateQueries({ queryKey: ['businessStores'] })
+    },
+    onError: (err: any) => error(err.message || 'Failed to request merchant updates.'),
+  })
+
+  const openRequestChanges = (store: StoreResponse) => {
+    setInspectStore(null)
+    setRequestChangesTarget(store)
+  }
 
   const renderStatusBadge = (status: MarketplaceStatus) => {
     switch (status) {
@@ -100,6 +131,12 @@ export const StoresPage: React.FC = () => {
         return (
           <Badge variant="amber" dot>
             Pending Review
+          </Badge>
+        )
+      case 'NEEDS_CHANGES':
+        return (
+          <Badge variant="blue" dot>
+            Waiting for Merchant
           </Badge>
         )
       case 'REJECTED':
@@ -117,7 +154,7 @@ export const StoresPage: React.FC = () => {
     }
   }
 
-  const isLoading = loadingPending || loadingBusiness
+  const isLoading = loadingPending || loadingChanges || loadingBusiness
 
   return (
     <div className="space-y-6">
@@ -139,6 +176,11 @@ export const StoresPage: React.FC = () => {
               id: 'PENDING',
               label: 'Pending Review',
               count: allStores.filter((s) => s.marketplaceStatus === 'PENDING_REVIEW').length,
+            },
+            {
+              id: 'NEEDS_CHANGES',
+              label: 'Waiting for Merchant',
+              count: allStores.filter((s) => s.marketplaceStatus === 'NEEDS_CHANGES').length,
             },
             {
               id: 'APPROVED',
@@ -221,13 +263,15 @@ export const StoresPage: React.FC = () => {
                   <th className="px-5 py-2.5">Type & City</th>
                   <th className="px-5 py-2.5">Marketplace Status</th>
                   <th className="px-5 py-2.5">POS Status</th>
+                  <th className="px-5 py-2.5">Listing Readiness</th>
                   <th className="px-5 py-2.5">Contact</th>
                   <th className="px-5 py-2.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
-                {filteredStores.map((store) => (
-                  <tr key={store.id} className="hover:bg-zinc-50/60 transition-colors">
+                {filteredStores.map((store) => {
+                  const readiness = getStoreReadiness(store)
+                  return <tr key={store.id} className="hover:bg-zinc-50/60 transition-colors">
                     <td className="px-5 py-3.5">
                       <div className="font-medium text-zinc-900">{store.name}</div>
                       <div className="text-zinc-400 text-[11px] font-mono mt-0.5">
@@ -238,7 +282,9 @@ export const StoresPage: React.FC = () => {
                       <div className="text-zinc-800">{store.storeType || 'Retail'}</div>
                       <div className="text-zinc-400 text-[11px] mt-0.5">{store.city || 'Phnom Penh'}</div>
                     </td>
-                    <td className="px-5 py-3.5">{renderStatusBadge(store.marketplaceStatus)}</td>
+                    <td className="px-5 py-3.5">
+                      {renderStatusBadge(store.marketplaceStatus)}
+                    </td>
                     <td className="px-5 py-3.5">
                       {store.status === 1 ? (
                         <span className="text-[11px] font-medium text-emerald-700 flex items-center gap-1">
@@ -251,6 +297,9 @@ export const StoresPage: React.FC = () => {
                           Inactive
                         </span>
                       )}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      {store.marketplaceStatus === 'PENDING_REVIEW' || store.marketplaceStatus === 'NEEDS_CHANGES' ? <div className="space-y-1"><Badge variant={readiness.ready ? 'emerald' : 'amber'}>{readiness.ready ? 'Ready' : `${readiness.missing.length} missing`}</Badge><span className="block text-[10px] text-zinc-500">{readiness.items.length - readiness.missing.length}/{readiness.items.length} complete</span></div> : <span className="text-[11px] text-zinc-400">—</span>}
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="font-mono text-zinc-700 text-[11px]">{store.phone || '—'}</div>
@@ -271,10 +320,19 @@ export const StoresPage: React.FC = () => {
                           <>
                             <button
                               type="button"
-                              onClick={() => setApproveTarget(store)}
-                              className="px-2.5 py-1 rounded-md text-xs font-medium text-white bg-zinc-900 hover:bg-zinc-800 transition shadow-2xs"
+                              onClick={() => openRequestChanges(store)}
+                              className="px-2.5 py-1 rounded-md text-xs font-medium text-amber-800 bg-white border border-amber-200 hover:bg-amber-50 transition shadow-2xs"
                             >
-                              Approve
+                              Request updates
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setApproveTarget(store)}
+                              disabled={!readiness.ready}
+                              title={!readiness.ready ? 'Complete the listing checklist before approval.' : undefined}
+                              className="px-2.5 py-1 rounded-md text-xs font-medium text-white bg-zinc-900 hover:bg-zinc-800 transition shadow-2xs disabled:cursor-not-allowed disabled:bg-zinc-300"
+                            >
+                              {readiness.ready ? 'Approve' : 'Incomplete'}
                             </button>
                             <button
                               type="button"
@@ -291,7 +349,7 @@ export const StoresPage: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                })}
               </tbody>
             </table>
           </div>
@@ -322,10 +380,12 @@ export const StoresPage: React.FC = () => {
               {renderStatusBadge(inspectStore.marketplaceStatus)}
             </div>
 
+            <StoreReadinessPanel store={inspectStore} />
+
             {inspectStore.rejectionReason && (
-              <div className="p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-xs">
-                <span className="font-medium text-rose-900 block">Rejection Feedback</span>
-                <span className="text-rose-700 mt-0.5 block">{inspectStore.rejectionReason}</span>
+              <div className={`p-3.5 rounded-lg border text-xs ${inspectStore.marketplaceStatus === 'NEEDS_CHANGES' ? 'bg-sky-50 border-sky-200' : 'bg-rose-50 border-rose-200'}`}>
+                <span className={`font-medium block ${inspectStore.marketplaceStatus === 'NEEDS_CHANGES' ? 'text-sky-900' : 'text-rose-900'}`}>{inspectStore.marketplaceStatus === 'NEEDS_CHANGES' ? 'Update request sent to merchant' : 'Rejection feedback'}</span>
+                <span className={`mt-0.5 block ${inspectStore.marketplaceStatus === 'NEEDS_CHANGES' ? 'text-sky-800' : 'text-rose-700'}`}>{inspectStore.rejectionReason}</span>
               </div>
             )}
 
@@ -373,6 +433,13 @@ export const StoresPage: React.FC = () => {
                 <>
                   <button
                     type="button"
+                    onClick={() => openRequestChanges(inspectStore)}
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-amber-800 bg-white border border-amber-200 hover:bg-amber-50"
+                  >
+                    Request updates
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => {
                       setRejectTarget(inspectStore)
                       setRejectReason('')
@@ -383,10 +450,12 @@ export const StoresPage: React.FC = () => {
                   </button>
                   <button
                     type="button"
+                    disabled={!getStoreReadiness(inspectStore).ready}
+                    title={!getStoreReadiness(inspectStore).ready ? 'Complete the listing checklist before approval.' : undefined}
                     onClick={() => setApproveTarget(inspectStore)}
-                    className="px-4 py-1.5 rounded-lg text-xs font-medium text-white bg-zinc-900 hover:bg-zinc-800"
+                    className="px-4 py-1.5 rounded-lg text-xs font-medium text-white bg-zinc-900 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-300"
                   >
-                    Approve Store
+                    {getStoreReadiness(inspectStore).ready ? 'Approve Store' : 'Complete checklist'}
                   </button>
                 </>
               )}
@@ -440,6 +509,13 @@ export const StoresPage: React.FC = () => {
           </div>
         </ConfirmDialog>
       )}
+
+      <RequestChangesDialog
+        store={requestChangesTarget}
+        isSubmitting={requestChangesMutation.isPending}
+        onClose={() => setRequestChangesTarget(null)}
+        onSubmit={(reason) => requestChangesTarget && requestChangesMutation.mutate({ id: requestChangesTarget.id, reason })}
+      />
     </div>
   )
 }

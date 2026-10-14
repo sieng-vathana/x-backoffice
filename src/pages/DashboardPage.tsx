@@ -1,26 +1,22 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { storeService } from '../services/storeService'
 import { categoryService } from '../services/categoryService'
 import { brandService } from '../services/brandService'
 import { Badge } from '../components/ui/Badge'
-import { ConfirmDialog } from '../components/ui/ConfirmDialog'
-import { useToast } from '../context/ToastContext'
-import type { StoreResponse } from '../types/store'
+import { getStoreReadiness } from '../lib/storeReadiness'
 
 export const DashboardPage: React.FC = () => {
-  const queryClient = useQueryClient()
-  const { success, error } = useToast()
-
-  const [selectedStore, setSelectedStore] = useState<StoreResponse | null>(null)
-  const [rejectStore, setRejectStore] = useState<StoreResponse | null>(null)
-  const [rejectReason, setRejectReason] = useState('')
-
   // Queries
   const { data: pendingStores = [], isLoading: loadingPending } = useQuery({
     queryKey: ['pendingStores'],
     queryFn: () => storeService.getPendingMarketplaceStores(),
+  })
+
+  const { data: storesNeedingChanges = [] } = useQuery({
+    queryKey: ['marketplaceStoresNeedingChanges'],
+    queryFn: () => storeService.getMarketplaceStoresNeedingChanges(),
   })
 
   const { data: categories = [] } = useQuery({
@@ -31,33 +27,6 @@ export const DashboardPage: React.FC = () => {
   const { data: brands = [] } = useQuery({
     queryKey: ['brands'],
     queryFn: () => brandService.getBrands(),
-  })
-
-  // Mutations
-  const approveMutation = useMutation({
-    mutationFn: (id: number) => storeService.approveMarketplaceStore(id),
-    onSuccess: (updated) => {
-      success(`Store "${updated.name}" approved successfully!`)
-      setSelectedStore(null)
-      queryClient.invalidateQueries({ queryKey: ['pendingStores'] })
-    },
-    onError: (err: any) => {
-      error(err.message || 'Failed to approve store.')
-    },
-  })
-
-  const rejectMutation = useMutation({
-    mutationFn: ({ id, reason }: { id: number; reason: string }) =>
-      storeService.rejectMarketplaceStore(id, reason),
-    onSuccess: (updated) => {
-      success(`Store "${updated.name}" application rejected.`)
-      setRejectStore(null)
-      setRejectReason('')
-      queryClient.invalidateQueries({ queryKey: ['pendingStores'] })
-    },
-    onError: (err: any) => {
-      error(err.message || 'Failed to reject store.')
-    },
   })
 
   // Load stores for real count
@@ -99,7 +68,7 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* Action Banner (When pending > 0) */}
-      {pendingStores.length > 0 && (
+      {(pendingStores.length > 0 || storesNeedingChanges.length > 0) && (
         <div className="p-4 rounded-xl bg-zinc-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-amber-400 font-bold shrink-0">
@@ -107,10 +76,10 @@ export const DashboardPage: React.FC = () => {
             </div>
             <div>
               <div className="text-xs font-medium text-zinc-100">
-                {pendingStores.length} merchant application{pendingStores.length > 1 ? 's' : ''} awaiting review
+                {pendingStores.length > 0 ? `${pendingStores.length} application${pendingStores.length === 1 ? '' : 's'} need review` : 'No applications need review'}
               </div>
               <div className="text-[11px] text-zinc-400">
-                New stores cannot publish public listings until authorized by an administrator.
+                {storesNeedingChanges.length} {storesNeedingChanges.length === 1 ? 'merchant is' : 'merchants are'} waiting for requested updates.
               </div>
             </div>
           </div>
@@ -138,6 +107,7 @@ export const DashboardPage: React.FC = () => {
           </div>
           <div className="mt-2 text-[11px] text-zinc-400">
             {pendingStores.length === 0 ? 'Queue is clear' : 'Awaiting admin decision'}
+            {storesNeedingChanges.length > 0 ? ` · ${storesNeedingChanges.length} waiting for merchant` : ''}
           </div>
         </div>
 
@@ -264,21 +234,10 @@ export const DashboardPage: React.FC = () => {
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => setSelectedStore(store)}
-                          className="px-2.5 py-1 rounded-md text-xs font-medium text-white bg-zinc-900 hover:bg-zinc-800 transition shadow-2xs"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => {
-                            setRejectStore(store)
-                            setRejectReason('')
-                          }}
-                          className="px-2.5 py-1 rounded-md text-xs font-medium text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 transition shadow-2xs"
-                        >
-                          Reject
-                        </button>
+                        <span className={`rounded-full px-2 py-1 text-[10px] font-medium ${getStoreReadiness(store).ready ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>
+                          {getStoreReadiness(store).items.length - getStoreReadiness(store).missing.length}/{getStoreReadiness(store).items.length} ready
+                        </span>
+                        <Link to="/approvals" className="px-2.5 py-1 rounded-md text-xs font-medium text-white bg-zinc-900 hover:bg-zinc-800 transition shadow-2xs">Review</Link>
                       </div>
                     </td>
                   </tr>
@@ -366,44 +325,6 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Confirmation Dialog for Approval */}
-      {selectedStore && (
-        <ConfirmDialog
-          isOpen={true}
-          onClose={() => setSelectedStore(null)}
-          onConfirm={() => approveMutation.mutate(selectedStore.id)}
-          title="Approve Merchant Application"
-          message={`Are you sure you want to approve "${selectedStore.name}"? Once approved, the merchant's catalog will be eligible to appear on the public marketplace.`}
-          confirmText="Approve Store"
-          variant="primary"
-          isLoading={approveMutation.isPending}
-        />
-      )}
-
-      {/* Rejection Dialog */}
-      {rejectStore && (
-        <ConfirmDialog
-          isOpen={true}
-          onClose={() => setRejectStore(null)}
-          onConfirm={() =>
-            rejectMutation.mutate({ id: rejectStore.id, reason: rejectReason })
-          }
-          title="Reject Merchant Application"
-          message={`Reject application for "${rejectStore.name}". You can optionally provide feedback explaining why:`}
-          confirmText="Reject Application"
-          variant="danger"
-          isLoading={rejectMutation.isPending}
-        >
-          <div className="pt-2">
-            <textarea
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="e.g. Incomplete business documents, invalid product imagery..."
-              className="w-full text-xs p-3 rounded-lg border border-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 min-h-[85px]"
-            />
-          </div>
-        </ConfirmDialog>
-      )}
     </div>
   )
 }

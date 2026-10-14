@@ -4,17 +4,22 @@ import { storeService } from '../services/storeService'
 import { Badge } from '../components/ui/Badge'
 import { Modal } from '../components/ui/Modal'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import { StoreReadinessPanel } from '../components/StoreReadinessPanel'
+import { RequestChangesDialog } from '../components/RequestChangesDialog'
 import { useToast } from '../context/ToastContext'
 import type { StoreResponse } from '../types/store'
+import { getStoreReadiness } from '../lib/storeReadiness'
 
 export const ApprovalsPage: React.FC = () => {
   const queryClient = useQueryClient()
   const { success, error } = useToast()
 
   const [search, setSearch] = useState('')
+  const [activeQueue, setActiveQueue] = useState<'PENDING_REVIEW' | 'NEEDS_CHANGES'>('PENDING_REVIEW')
   const [activeDossier, setActiveDossier] = useState<StoreResponse | null>(null)
   const [approveTarget, setApproveTarget] = useState<StoreResponse | null>(null)
   const [rejectTarget, setRejectTarget] = useState<StoreResponse | null>(null)
+  const [requestChangesTarget, setRequestChangesTarget] = useState<StoreResponse | null>(null)
   const [rejectReason, setRejectReason] = useState('')
 
   const { data: pendingStores = [], isLoading, refetch } = useQuery({
@@ -22,10 +27,17 @@ export const ApprovalsPage: React.FC = () => {
     queryFn: () => storeService.getPendingMarketplaceStores(),
   })
 
+  const { data: storesNeedingChanges = [], isLoading: loadingChanges, refetch: refetchChanges } = useQuery({
+    queryKey: ['marketplaceStoresNeedingChanges'],
+    queryFn: () => storeService.getMarketplaceStoresNeedingChanges(),
+  })
+
+  const activeStores = activeQueue === 'PENDING_REVIEW' ? pendingStores : storesNeedingChanges
+
   const filteredStores = useMemo(() => {
-    if (!search.trim()) return pendingStores
+    if (!search.trim()) return activeStores
     const term = search.toLowerCase()
-    return pendingStores.filter(
+    return activeStores.filter(
       (s) =>
         s.name.toLowerCase().includes(term) ||
         s.code.toLowerCase().includes(term) ||
@@ -33,7 +45,7 @@ export const ApprovalsPage: React.FC = () => {
         (s.phone && s.phone.includes(term)) ||
         (s.email && s.email.toLowerCase().includes(term))
     )
-  }, [pendingStores, search])
+  }, [activeStores, search])
 
   const approveMutation = useMutation({
     mutationFn: (id: number) => storeService.approveMarketplaceStore(id),
@@ -42,6 +54,7 @@ export const ApprovalsPage: React.FC = () => {
       setApproveTarget(null)
       if (activeDossier?.id === updated.id) setActiveDossier(null)
       queryClient.invalidateQueries({ queryKey: ['pendingStores'] })
+      queryClient.invalidateQueries({ queryKey: ['marketplaceStoresNeedingChanges'] })
     },
     onError: (err: any) => {
       error(err.message || 'Failed to approve store.')
@@ -57,11 +70,30 @@ export const ApprovalsPage: React.FC = () => {
       setRejectReason('')
       if (activeDossier?.id === updated.id) setActiveDossier(null)
       queryClient.invalidateQueries({ queryKey: ['pendingStores'] })
+      queryClient.invalidateQueries({ queryKey: ['marketplaceStoresNeedingChanges'] })
     },
     onError: (err: any) => {
       error(err.message || 'Failed to reject store.')
     },
   })
+
+  const requestChangesMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason: string }) => storeService.requestMarketplaceChanges(id, reason),
+    onSuccess: (updated) => {
+      success(`Update request sent to "${updated.name}".`)
+      setRequestChangesTarget(null)
+      if (activeDossier?.id === updated.id) setActiveDossier(null)
+      queryClient.invalidateQueries({ queryKey: ['pendingStores'] })
+      queryClient.invalidateQueries({ queryKey: ['marketplaceStoresNeedingChanges'] })
+    },
+    onError: (err: any) => error(err.message || 'Failed to request merchant updates.'),
+  })
+
+  const approveReadyStore = (store: StoreResponse) => getStoreReadiness(store).ready
+  const openRequestChanges = (store: StoreResponse) => {
+    setActiveDossier(null)
+    setRequestChangesTarget(store)
+  }
 
   return (
     <div className="space-y-6">
@@ -71,16 +103,16 @@ export const ApprovalsPage: React.FC = () => {
           <h1 className="text-xl font-semibold text-zinc-900 tracking-tight flex items-center gap-2.5">
             <span>Merchant Approvals</span>
             <Badge variant="amber" dot>
-              {pendingStores.length} Pending
+              {pendingStores.length} To review
             </Badge>
           </h1>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Review store details, inspect KYC and location info, and authorize stores to publish marketplace listings.
+            Check listing readiness, request missing information, and approve complete merchant applications.
           </p>
         </div>
 
         <button
-          onClick={() => refetch()}
+          onClick={() => { void refetch(); void refetchChanges() }}
           className="self-start sm:self-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 shadow-2xs flex items-center gap-1.5 transition"
         >
           <i className="ri-refresh-line text-sm text-zinc-500" />
@@ -88,28 +120,31 @@ export const ApprovalsPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Filter / Search Bar */}
-      <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-2xs flex items-center gap-2.5">
-        <i className="ri-search-line text-zinc-400 text-sm pl-1" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Filter by store name, code, phone, email, or city..."
-          className="w-full text-xs text-zinc-900 placeholder:text-zinc-400 bg-transparent focus:outline-none"
-        />
-        {search && (
-          <button
-            onClick={() => setSearch('')}
-            className="text-zinc-400 hover:text-zinc-600 text-xs px-1"
-          >
-            <i className="ri-close-circle-fill" />
+      {/* Review queues and search */}
+      <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-2xs space-y-3">
+        <div className="flex flex-wrap items-center gap-2 border-b border-zinc-100 pb-3">
+          <button type="button" onClick={() => setActiveQueue('PENDING_REVIEW')} className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition ${activeQueue === 'PENDING_REVIEW' ? 'bg-zinc-900 text-white' : 'text-zinc-600 hover:bg-zinc-100'}`}>
+            <i className="ri-inbox-line" /> Needs review <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${activeQueue === 'PENDING_REVIEW' ? 'bg-zinc-700 text-zinc-100' : 'bg-zinc-100 text-zinc-600'}`}>{pendingStores.length}</span>
           </button>
-        )}
+          <button type="button" onClick={() => setActiveQueue('NEEDS_CHANGES')} className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition ${activeQueue === 'NEEDS_CHANGES' ? 'bg-zinc-900 text-white' : 'text-zinc-600 hover:bg-zinc-100'}`}>
+            <i className="ri-time-line" /> Waiting for merchant <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${activeQueue === 'NEEDS_CHANGES' ? 'bg-zinc-700 text-zinc-100' : 'bg-zinc-100 text-zinc-600'}`}>{storesNeedingChanges.length}</span>
+          </button>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <i className="ri-search-line text-zinc-400 text-sm pl-1" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Filter by store name, code, phone, email, or city..."
+            className="w-full text-xs text-zinc-900 placeholder:text-zinc-400 bg-transparent focus:outline-none"
+          />
+          {search && <button onClick={() => setSearch('')} aria-label="Clear search" className="text-zinc-400 hover:text-zinc-600 text-xs px-1"><i className="ri-close-circle-fill" /></button>}
+        </div>
       </div>
 
       {/* Content */}
-      {isLoading ? (
+      {isLoading || (activeQueue === 'NEEDS_CHANGES' && loadingChanges) ? (
         <div className="bg-white rounded-xl p-16 border border-zinc-200 text-center text-zinc-400">
           <i className="ri-loader-4-line text-2xl animate-spin text-zinc-500 inline-block mb-2" />
           <div className="text-xs font-medium">Loading merchant applications...</div>
@@ -120,12 +155,12 @@ export const ApprovalsPage: React.FC = () => {
             <i className="ri-check-line" />
           </div>
           <h3 className="text-sm font-semibold text-zinc-900">
-            {search ? 'No Matching Applications' : 'Queue is Clear'}
+            {search ? 'No Matching Applications' : activeQueue === 'NEEDS_CHANGES' ? 'No merchants waiting to update' : 'Queue is Clear'}
           </h3>
           <p className="text-xs text-zinc-500 max-w-sm mx-auto mt-0.5">
             {search
               ? `No pending stores matching "${search}".`
-              : 'There are currently no stores awaiting marketplace authorization.'}
+              : activeQueue === 'NEEDS_CHANGES' ? 'Requested updates will appear here until the merchant resubmits.' : 'There are currently no stores awaiting marketplace authorization.'}
           </p>
         </div>
       ) : (
@@ -144,10 +179,20 @@ export const ApprovalsPage: React.FC = () => {
                       Code: {store.code} • Business #{store.businessId}
                     </div>
                   </div>
-                  <Badge variant="amber" dot>
-                    Pending Review
+                  <Badge variant={activeQueue === 'PENDING_REVIEW' ? 'amber' : 'blue'} dot>
+                    {activeQueue === 'PENDING_REVIEW' ? 'Pending Review' : 'Waiting for Merchant'}
                   </Badge>
                 </div>
+
+                <div className="mt-3">
+                  <StoreReadinessPanel store={store} compact />
+                </div>
+
+                {activeQueue === 'NEEDS_CHANGES' && store.rejectionReason ? (
+                  <div className="mt-3 rounded-lg border border-sky-200 bg-sky-50 p-3 text-[11px] leading-relaxed text-sky-900">
+                    <strong className="block">Update request sent to merchant</strong>{store.rejectionReason}
+                  </div>
+                ) : null}
 
                 {/* Quick Info Grid */}
                 <div className="mt-4 pt-3 border-t border-zinc-100 grid grid-cols-2 gap-2.5 text-xs">
@@ -209,26 +254,13 @@ export const ApprovalsPage: React.FC = () => {
                   Inspect Details
                 </button>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRejectTarget(store)
-                      setRejectReason('')
-                    }}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 transition shadow-2xs"
-                  >
-                    Reject
+                {activeQueue === 'PENDING_REVIEW' ? <div className="flex flex-wrap items-center justify-end gap-2">
+                  <button type="button" onClick={() => openRequestChanges(store)} className="px-3 py-1.5 rounded-lg border border-amber-200 bg-white text-xs font-medium text-amber-800 shadow-2xs transition hover:bg-amber-50">Request updates</button>
+                  <button type="button" onClick={() => { setRejectTarget(store); setRejectReason('') }} className="px-3 py-1.5 rounded-lg border border-rose-200 bg-white text-xs font-medium text-rose-700 shadow-2xs transition hover:bg-rose-50">Reject</button>
+                  <button type="button" disabled={!approveReadyStore(store)} title={!approveReadyStore(store) ? 'Complete the listing checklist before approval.' : undefined} onClick={() => setApproveTarget(store)} className="flex items-center gap-1 rounded-lg bg-zinc-900 px-3.5 py-1.5 text-xs font-medium text-white shadow-xs transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-300">
+                    <i className="ri-check-line text-xs" />{approveReadyStore(store) ? 'Approve' : 'Complete checklist'}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setApproveTarget(store)}
-                    className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-white bg-zinc-900 hover:bg-zinc-800 transition shadow-xs flex items-center gap-1"
-                  >
-                    <i className="ri-check-line text-xs" />
-                    Approve
-                  </button>
-                </div>
+                </div> : <span className="text-[11px] text-zinc-500">Waiting for merchant resubmission</span>}
               </div>
             </div>
           ))}
@@ -248,7 +280,7 @@ export const ApprovalsPage: React.FC = () => {
             {/* Status overview */}
             <div className="p-3.5 rounded-lg bg-zinc-50 border border-zinc-200 flex items-center justify-between">
               <div>
-                <span className="text-xs font-medium text-zinc-900 block">Status: Awaiting Review</span>
+                <span className="text-xs font-medium text-zinc-900 block">Status: {activeDossier.marketplaceStatus === 'NEEDS_CHANGES' ? 'Waiting for merchant updates' : 'Awaiting review'}</span>
                 <span className="text-[11px] text-zinc-500">
                   Applied:{' '}
                   {activeDossier.marketplaceAppliedAt
@@ -256,10 +288,18 @@ export const ApprovalsPage: React.FC = () => {
                     : 'N/A'}
                 </span>
               </div>
-              <Badge variant="amber" dot>
-                PENDING_REVIEW
+              <Badge variant={activeDossier.marketplaceStatus === 'NEEDS_CHANGES' ? 'blue' : 'amber'} dot>
+                {activeDossier.marketplaceStatus === 'NEEDS_CHANGES' ? 'NEEDS_CHANGES' : 'PENDING_REVIEW'}
               </Badge>
             </div>
+
+            <StoreReadinessPanel store={activeDossier} />
+
+            {activeDossier.marketplaceStatus === 'NEEDS_CHANGES' && activeDossier.rejectionReason ? (
+              <div className="rounded-lg border border-sky-200 bg-sky-50 p-3.5 text-xs leading-relaxed text-sky-900">
+                <span className="mb-1 block font-semibold">Update request sent to merchant</span>{activeDossier.rejectionReason}
+              </div>
+            ) : null}
 
             {/* General Info */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 text-xs">
@@ -333,25 +373,20 @@ export const ApprovalsPage: React.FC = () => {
             )}
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-zinc-100">
-              <button
-                type="button"
-                onClick={() => {
-                  setRejectTarget(activeDossier)
-                  setRejectReason('')
-                }}
-                className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 transition"
-              >
-                Reject Application
-              </button>
-              <button
-                type="button"
-                onClick={() => setApproveTarget(activeDossier)}
-                className="px-4 py-1.5 rounded-lg text-xs font-medium text-white bg-zinc-900 hover:bg-zinc-800 transition shadow-xs flex items-center gap-1.5"
-              >
-                <i className="ri-check-line text-xs" />
-                Approve Store
-              </button>
+            <div className="flex flex-wrap items-center justify-end gap-2.5 pt-4 border-t border-zinc-100">
+              {activeDossier.marketplaceStatus === 'PENDING_REVIEW' ? <>
+                <button type="button" onClick={() => openRequestChanges(activeDossier)} className="px-3.5 py-1.5 rounded-lg border border-amber-200 bg-white text-xs font-medium text-amber-800 hover:bg-amber-50 transition">Request updates</button>
+                <button type="button" onClick={() => { setRejectTarget(activeDossier); setRejectReason('') }} className="px-3.5 py-1.5 rounded-lg border border-rose-200 bg-white text-xs font-medium text-rose-700 hover:bg-rose-50 transition">Reject application</button>
+                <button
+                  type="button"
+                  disabled={!approveReadyStore(activeDossier)}
+                  title={!approveReadyStore(activeDossier) ? 'Complete the listing checklist before approval.' : undefined}
+                  onClick={() => setApproveTarget(activeDossier)}
+                  className="flex items-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-1.5 text-xs font-medium text-white shadow-xs transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-300"
+                >
+                  <i className="ri-check-line text-xs" />{approveReadyStore(activeDossier) ? 'Approve Store' : 'Complete checklist'}
+                </button>
+              </> : null}
             </div>
           </div>
         </Modal>
@@ -418,6 +453,13 @@ export const ApprovalsPage: React.FC = () => {
           </div>
         </ConfirmDialog>
       )}
+
+      <RequestChangesDialog
+        store={requestChangesTarget}
+        isSubmitting={requestChangesMutation.isPending}
+        onClose={() => setRequestChangesTarget(null)}
+        onSubmit={(reason) => requestChangesTarget && requestChangesMutation.mutate({ id: requestChangesTarget.id, reason })}
+      />
     </div>
   )
 }

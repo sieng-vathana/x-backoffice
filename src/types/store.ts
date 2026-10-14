@@ -4,7 +4,12 @@
   isPrimary?: boolean
 }
 
-export type MarketplaceStatus = 'NOT_LISTED' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED'
+export type MarketplaceStatus = 'NOT_LISTED' | 'PENDING_REVIEW' | 'NEEDS_CHANGES' | 'APPROVED' | 'REJECTED'
+
+export interface StoreOpeningHours {
+  timeZone: string
+  days: Record<string, { closed: boolean; openTime: string | null; closeTime: string | null }>
+}
 
 export interface StoreResponse {
   id: number
@@ -26,6 +31,7 @@ export interface StoreResponse {
   latitude?: number
   longitude?: number
   images?: StoreImageResponse[]
+  openingHours?: StoreOpeningHours | null
   status?: number
   marketplaceStatus: MarketplaceStatus
   marketplaceAppliedAt?: string | null
