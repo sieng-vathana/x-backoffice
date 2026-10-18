@@ -24,3 +24,41 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Keep backoffice pages readable on phones and prevent iOS focus zoom on small controls. */
+@media (max-width: 640px) {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    font-size: 16px;
+  }
+
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  .text-xs,
+  [class~='text-[9px]'],
+  [class~='text-[10px]'],
+  [class~='text-[11px]'],
+  [class~='text-[12px]'],
+  [class~='text-[13px]'] {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+  }
+
+  .text-sm {
+    font-size: 16px !important;
+    line-height: 1.45 !important;
+  }
+
+  small,
+  thead th {
+    font-size: 14px !important;
+  }
+}
