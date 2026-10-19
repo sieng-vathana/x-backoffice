@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { storeService } from '../../services/storeService'
 import { businessApprovalService } from '../../services/businessApprovalService'
+import { LocaleSwitcher } from '../../i18n/LocaleSwitcher'
 
 export const AppLayout: React.FC = () => {
   const { user, signOut } = useAuth()
@@ -196,6 +197,8 @@ export const AppLayout: React.FC = () => {
               <i className="ri-time-line text-zinc-400" />
               <span>Cambodia · GMT+7</span>
             </div>
+
+            <LocaleSwitcher />
           </div>
         </header>
 
