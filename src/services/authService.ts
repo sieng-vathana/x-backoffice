@@ -39,13 +39,7 @@ export class MfaRequiredError extends Error {
 
 function mapUser(data: BackendAuthData['user']): AuthenticatedUser {
   const permissions = data?.permissions ?? []
-  const isPlatformAdmin =
-    permissions.includes('platform:admin') ||
-    permissions.includes('x-store:manage') ||
-    data?.username === 'admin' ||
-    data?.username === 'root' ||
-    data?.username === 'sieng' ||
-    permissions.length > 0 // Admins and operational users
+  const isPlatformAdmin = permissions.includes('platform:admin')
 
   return {
     id: String(data?.id ?? ''),
