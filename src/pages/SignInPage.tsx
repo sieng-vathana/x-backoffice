@@ -2,10 +2,10 @@ import React, { useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
-import { TelegramMfaRequiredError } from '../services/authService'
+import { MfaRequiredError } from '../services/authService'
 
 export const SignInPage: React.FC = () => {
-  const { signIn, signInWithTelegram, isAuthenticated, isLoading } = useAuth()
+  const { signIn, signInWithMfa, isAuthenticated, isLoading } = useAuth()
   const navigate = useNavigate()
   const { error, success } = useToast()
 
@@ -13,8 +13,8 @@ export const SignInPage: React.FC = () => {
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [errMessage, setErrMessage] = useState('')
-  const [challenge, setChallenge] = useState<{ token: string; expiresAt?: string } | null>(null)
-  const [telegramCode, setTelegramCode] = useState('')
+  const [challenge, setChallenge] = useState<{ token: string; expiresAt?: string; method: 'EMAIL' | 'TELEGRAM'; destination?: string } | null>(null)
+  const [mfaCode, setMfaCode] = useState('')
 
   if (!isLoading && isAuthenticated) {
     return <Navigate to="/" replace />
@@ -26,15 +26,15 @@ export const SignInPage: React.FC = () => {
     setSubmitting(true)
     try {
       if (challenge) {
-        await signInWithTelegram({ username: username.trim(), challengeToken: challenge.token, code: telegramCode })
+        await signInWithMfa({ username: username.trim(), challengeToken: challenge.token, code: mfaCode, method: challenge.method })
       } else {
         await signIn({ username: username.trim(), password })
       }
       success('Welcome to X Platform Back-Office!')
       navigate('/')
     } catch (err: any) {
-      if (err instanceof TelegramMfaRequiredError) {
-        setChallenge({ token: err.challengeToken, expiresAt: err.expiresAt })
+      if (err instanceof MfaRequiredError) {
+        setChallenge({ token: err.challengeToken, expiresAt: err.expiresAt, method: err.method, destination: err.destination })
         setPassword('')
         setErrMessage('')
         return
@@ -74,9 +74,9 @@ export const SignInPage: React.FC = () => {
             )}
 
             {challenge ? <div>
-              <label className="block text-xs font-medium text-zinc-700 mb-1">Telegram verification code</label>
-              <p className="mb-2 text-xs text-zinc-500">Enter the 8-digit code sent to your linked Telegram chat.</p>
-              <input type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={8} autoFocus required value={telegramCode} onChange={(e) => setTelegramCode(e.target.value.replace(/\D/g, '').slice(0, 8))} placeholder="00000000" className="w-full px-3 py-2 bg-white border border-zinc-300 rounded-lg text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 transition shadow-2xs" />
+              <label className="block text-xs font-medium text-zinc-700 mb-1">{challenge.method === 'EMAIL' ? 'Email' : 'Telegram'} verification code</label>
+              <p className="mb-2 text-xs text-zinc-500">{challenge.method === 'EMAIL' ? `Enter the 8-digit code sent to ${challenge.destination || 'your verified email address'}.` : 'Enter the 8-digit code sent to your linked Telegram chat.'}</p>
+              <input type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={8} autoFocus required value={mfaCode} onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 8))} placeholder="00000000" className="w-full px-3 py-2 bg-white border border-zinc-300 rounded-lg text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 transition shadow-2xs" />
               {challenge.expiresAt ? <p className="mt-2 text-xs text-zinc-500">Code expires at {new Date(challenge.expiresAt).toLocaleTimeString()}.</p> : null}
             </div> : <div>
               <label className="block text-xs font-medium text-zinc-700 mb-1">
@@ -112,7 +112,7 @@ export const SignInPage: React.FC = () => {
             <div className="pt-1">
               <button
                 type="submit"
-                disabled={submitting || Boolean(challenge && telegramCode.length !== 8)}
+                disabled={submitting || Boolean(challenge && mfaCode.length !== 8)}
                 className="w-full flex justify-center items-center gap-2 py-2.5 px-4 rounded-lg text-xs font-medium text-white bg-zinc-900 hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2 transition shadow-xs disabled:opacity-50"
               >
                 {submitting ? (
@@ -126,7 +126,7 @@ export const SignInPage: React.FC = () => {
               </button>
             </div>
           </form>
-          {challenge ? <button type="button" className="mt-3 w-full text-xs font-semibold text-zinc-700 underline" onClick={() => { setChallenge(null); setTelegramCode(''); setErrMessage('') }}>Back to password</button> : null}
+          {challenge ? <button type="button" className="mt-3 w-full text-xs font-semibold text-zinc-700 underline" onClick={() => { setChallenge(null); setMfaCode(''); setErrMessage('') }}>Back to password</button> : null}
 
           <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-400">
             <span>Production Environment</span>

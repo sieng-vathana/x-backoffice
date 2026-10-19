@@ -18,17 +18,22 @@ interface BackendAuthData {
   mfaMethod?: string
   mfaChallengeToken?: string
   mfaExpiresAt?: string
+  mfaDestination?: string
 }
 
-export class TelegramMfaRequiredError extends Error {
+export class MfaRequiredError extends Error {
   readonly challengeToken: string
   readonly expiresAt?: string
+  readonly method: 'EMAIL' | 'TELEGRAM'
+  readonly destination?: string
 
-  constructor(challengeToken: string, expiresAt?: string) {
-    super('Enter the Telegram code to finish signing in.')
-    this.name = 'TelegramMfaRequiredError'
+  constructor(challengeToken: string, method: 'EMAIL' | 'TELEGRAM', expiresAt?: string, destination?: string) {
+    super(method === 'EMAIL' ? 'Enter the email code to finish signing in.' : 'Enter the Telegram code to finish signing in.')
+    this.name = 'MfaRequiredError'
     this.challengeToken = challengeToken
     this.expiresAt = expiresAt
+    this.method = method
+    this.destination = destination
   }
 }
 
@@ -67,7 +72,8 @@ export const authService = {
     })
 
     if (res.data?.mfaRequired && res.data.mfaChallengeToken) {
-      throw new TelegramMfaRequiredError(res.data.mfaChallengeToken, res.data.mfaExpiresAt)
+      throw new MfaRequiredError(res.data.mfaChallengeToken,
+        res.data.mfaMethod === 'EMAIL' ? 'EMAIL' : 'TELEGRAM', res.data.mfaExpiresAt, res.data.mfaDestination)
     }
 
     if (!res.data?.user) {
@@ -83,11 +89,13 @@ export const authService = {
     return user
   },
 
-  async verifyTelegramSignIn(input: { username: string; challengeToken: string; code: string }): Promise<AuthenticatedUser> {
-    const res = await api.request<ApiResponse<BackendAuthData>>('/auth/verify-telegram', {
-      method: 'POST', body: JSON.stringify(input),
+  async verifyMfaSignIn(input: { username: string; challengeToken: string; code: string; method: 'EMAIL' | 'TELEGRAM' }): Promise<AuthenticatedUser> {
+    const endpoint = input.method === 'EMAIL' ? '/auth/verify-email' : '/auth/verify-telegram'
+    const { method: _method, ...request } = input
+    const res = await api.request<ApiResponse<BackendAuthData>>(endpoint, {
+      method: 'POST', body: JSON.stringify(request),
     })
-    if (!res.data?.user) throw new Error(res.message || 'The Telegram code could not be verified.')
+    if (!res.data?.user) throw new Error(res.message || 'The verification code could not be verified.')
     if (res.data.accessToken) writeStoredValue(AUTH_TOKEN_KEY, res.data.accessToken)
     const user = mapUser(res.data.user)
     writeStoredValue(AUTH_USER_KEY, user)
