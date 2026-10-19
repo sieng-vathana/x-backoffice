@@ -19,6 +19,33 @@ interface BackendAuthData {
   mfaChallengeToken?: string
   mfaExpiresAt?: string
   mfaDestination?: string
+  mfaMethods?: string[]
+  mfaSelectionToken?: string
+}
+
+export type MfaMethod = 'EMAIL' | 'TELEGRAM'
+
+export interface MfaChallenge {
+  token: string
+  expiresAt?: string
+  method: MfaMethod
+  destination?: string
+}
+
+function messageOrFallback(message: string | undefined, fallback: string): string {
+  return message && message.toLowerCase() !== 'success' ? message : fallback
+}
+
+export class MfaMethodSelectionRequiredError extends Error {
+  readonly selectionToken: string
+  readonly methods: MfaMethod[]
+
+  constructor(selectionToken: string, methods: MfaMethod[]) {
+    super('Choose where to receive your sign-in verification code.')
+    this.name = 'MfaMethodSelectionRequiredError'
+    this.selectionToken = selectionToken
+    this.methods = methods
+  }
 }
 
 export class MfaRequiredError extends Error {
@@ -65,13 +92,26 @@ export const authService = {
       body: JSON.stringify(input),
     })
 
-    if (res.data?.mfaRequired && res.data.mfaChallengeToken) {
-      throw new MfaRequiredError(res.data.mfaChallengeToken,
-        res.data.mfaMethod === 'EMAIL' ? 'EMAIL' : 'TELEGRAM', res.data.mfaExpiresAt, res.data.mfaDestination)
+    if (res.data?.mfaRequired) {
+      if (res.data.mfaChallengeToken) {
+        throw new MfaRequiredError(res.data.mfaChallengeToken,
+          res.data.mfaMethod === 'EMAIL' ? 'EMAIL' : 'TELEGRAM', res.data.mfaExpiresAt, res.data.mfaDestination)
+      }
+
+      if (res.data.mfaSelectionToken) {
+        const methods = (res.data.mfaMethods ?? []).filter(
+          (method): method is MfaMethod => method === 'EMAIL' || method === 'TELEGRAM',
+        )
+        if (methods.length > 0) {
+          throw new MfaMethodSelectionRequiredError(res.data.mfaSelectionToken, methods)
+        }
+      }
+
+      throw new Error('Sign-in verification could not be started. Please try again.')
     }
 
     if (!res.data?.user) {
-      throw new Error(res.message || 'Invalid credentials or user not returned.')
+      throw new Error(messageOrFallback(res.message, 'Invalid credentials or user not returned.'))
     }
 
     if (res.data.accessToken) {
@@ -83,13 +123,31 @@ export const authService = {
     return user
   },
 
+  async sendMfaCode(input: { username: string; selectionToken: string; method: MfaMethod }): Promise<MfaChallenge> {
+    const res = await api.request<ApiResponse<BackendAuthData>>('/auth/mfa/send', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    })
+
+    if (!res.data?.mfaChallengeToken) {
+      throw new Error(messageOrFallback(res.message, 'The verification code could not be sent.'))
+    }
+
+    return {
+      token: res.data.mfaChallengeToken,
+      expiresAt: res.data.mfaExpiresAt,
+      method: res.data.mfaMethod === 'EMAIL' ? 'EMAIL' : 'TELEGRAM',
+      destination: res.data.mfaDestination,
+    }
+  },
+
   async verifyMfaSignIn(input: { username: string; challengeToken: string; code: string; method: 'EMAIL' | 'TELEGRAM' }): Promise<AuthenticatedUser> {
     const endpoint = input.method === 'EMAIL' ? '/auth/verify-email' : '/auth/verify-telegram'
     const { method: _method, ...request } = input
     const res = await api.request<ApiResponse<BackendAuthData>>(endpoint, {
       method: 'POST', body: JSON.stringify(request),
     })
-    if (!res.data?.user) throw new Error(res.message || 'The verification code could not be verified.')
+    if (!res.data?.user) throw new Error(messageOrFallback(res.message, 'The verification code could not be verified.'))
     if (res.data.accessToken) writeStoredValue(AUTH_TOKEN_KEY, res.data.accessToken)
     const user = mapUser(res.data.user)
     writeStoredValue(AUTH_USER_KEY, user)

@@ -66,7 +66,7 @@ export class ApiClient {
     const token = this.options.getToken ? this.options.getToken() : null
     const baseUrl = this.options.baseUrl ?? API_BASE_URL
     const url = path.startsWith('http') ? path : `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`
-    const isAuthRequest = path.includes('/auth/login') || path.includes('/auth/verify-telegram') || path.includes('/auth/verify-email') || path.includes('/auth/refresh') || path.includes('/auth/register')
+    const isAuthRequest = path.includes('/auth/login') || path.includes('/auth/mfa/send') || path.includes('/auth/verify-telegram') || path.includes('/auth/verify-email') || path.includes('/auth/refresh') || path.includes('/auth/register')
 
     const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData
 
