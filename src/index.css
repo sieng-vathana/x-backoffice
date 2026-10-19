@@ -2,7 +2,7 @@
 @import "remixicon/fonts/remixicon.css";
 
 @theme {
-  --font-sans: "Nunito", "Kantumruy Pro", "Segoe UI", sans-serif;
+  --font-sans: "Nunito", "Battambang", "Segoe UI", sans-serif;
   --color-brand: #6259ca;
   --color-brand-dark: #514ab0;
   --color-brand-soft: #eeedfa;
@@ -36,7 +36,7 @@
 }
 
 html[data-portal-language="km"] body {
-  font-family: "Kantumruy Pro", "Nunito", "Segoe UI", sans-serif;
+  font-family: "Battambang", "Nunito", "Segoe UI", sans-serif;
   font-size: 15px;
   line-height: 1.7;
 }
