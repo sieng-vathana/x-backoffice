@@ -13,6 +13,10 @@ export interface BusinessApproval {
   status: number
   reviewReason?: string | null
   createdAt?: string | null
+  /** STARTER, BUSINESS or PRO; null for merchants created before plans (treated as Pro). */
+  plan?: string | null
+  billingCycle?: string | null
+  trialEndsAt?: string | null
 }
 
 export const businessApprovalService = {

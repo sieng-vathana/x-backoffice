@@ -181,6 +181,7 @@ export const ApprovalsPage: React.FC = () => {
                     <div><span className="block text-zinc-400">Tax registration</span>{business.taxRegistrationNumber || 'Not provided'}</div>
                     <div><span className="block text-zinc-400">Currency / timezone</span>{business.defaultCurrencyCode} / {business.timeZone}</div>
                     <div><span className="block text-zinc-400">Registered</span>{business.createdAt ? new Date(business.createdAt).toLocaleString() : 'N/A'}</div>
+                    <div><span className="block text-zinc-400">Plan chosen</span>{business.plan ? `${business.plan.charAt(0)}${business.plan.slice(1).toLowerCase()} · ${business.billingCycle?.toUpperCase() === 'YEARLY' ? 'yearly' : 'monthly'}` : 'Not chosen'}</div>
                   </div>
                   <div className="mt-4 flex justify-end gap-2 border-t border-zinc-100 pt-4">
                     <button type="button" onClick={() => { setRejectBusinessTarget(business); setBusinessRejectReason('') }} className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50">Reject</button>

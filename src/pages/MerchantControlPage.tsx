@@ -37,6 +37,17 @@ const REASON_TEMPLATES = [
   'Requested by the merchant',
 ]
 
+const PLANS = [
+  { code: 'STARTER', name: 'Starter', monthly: 9, yearly: 90, limits: '1 store, 3 staff, 300 products. POS, KHQR and payment alerts.' },
+  { code: 'BUSINESS', name: 'Business', monthly: 25, yearly: 250, limits: '3 stores, 15 staff, 3000 products. Adds inventory, purchasing, customers, all alerts and full reports.' },
+  { code: 'PRO', name: 'Pro', monthly: 49, yearly: 490, limits: 'Unlimited. Adds the marketplace, delivery and priority support.' },
+]
+
+/** Merchants created before plans existed have no plan and get every Pro feature. */
+function planOf(merchant: ManagedMerchant) {
+  return PLANS.find((plan) => plan.code === merchant.plan?.toUpperCase()) ?? PLANS[2]
+}
+
 /** Server times have no zone and are UTC; show them in the viewer's time. */
 function formatTime(value?: string | null) {
   if (!value) return '—'
@@ -64,6 +75,9 @@ export const MerchantControlPage: React.FC = () => {
   const [suspendTarget, setSuspendTarget] = useState<Target | null>(null)
   const [reinstateTarget, setReinstateTarget] = useState<Target | null>(null)
   const [reason, setReason] = useState('')
+  const [planTarget, setPlanTarget] = useState<ManagedMerchant | null>(null)
+  const [planChoice, setPlanChoice] = useState('BUSINESS')
+  const [cycleChoice, setCycleChoice] = useState('MONTHLY')
 
   const merchantsQuery = useQuery({
     queryKey: ['adminMerchants', merchantFilter, search],
@@ -114,6 +128,22 @@ export const MerchantControlPage: React.FC = () => {
     },
     onError: (err: Error) => error(err.message || 'Could not reinstate.'),
   })
+
+  const planMutation = useMutation({
+    mutationFn: ({ merchant, plan, cycle }: { merchant: ManagedMerchant; plan: string; cycle: string }) => suspensionService.changePlan(merchant.id, plan, cycle),
+    onSuccess: (_, { merchant, plan }) => {
+      success(`${merchant.name} is now on the ${PLANS.find((item) => item.code === plan)?.name ?? plan} plan. The owner has been emailed.`)
+      setPlanTarget(null)
+      refresh()
+    },
+    onError: (err: Error) => error(err.message || 'Could not change the plan.'),
+  })
+
+  const openPlan = (merchant: ManagedMerchant) => {
+    setPlanChoice(planOf(merchant).code)
+    setCycleChoice(merchant.billingCycle?.toUpperCase() === 'YEARLY' ? 'YEARLY' : 'MONTHLY')
+    setPlanTarget(merchant)
+  }
 
   const filters = tab === 'merchants' ? MERCHANT_FILTERS : STORE_FILTERS
   const activeFilter = tab === 'merchants' ? merchantFilter : storeFilter
@@ -177,6 +207,7 @@ export const MerchantControlPage: React.FC = () => {
           onSuspend={(item) => { setReason(''); setSuspendTarget({ kind: 'merchant', item }) }}
           onReinstate={(item) => setReinstateTarget({ kind: 'merchant', item })}
           onShowStores={(merchant) => { setTab('stores'); setStoreFilter(''); setSearch(merchant.code) }}
+          onChangePlan={openPlan}
         />
       ) : (
         <StoreList
@@ -232,6 +263,61 @@ export const MerchantControlPage: React.FC = () => {
         </form>
       </Modal>
 
+      <Modal
+        isOpen={planTarget !== null}
+        onClose={() => { if (!planMutation.isPending) setPlanTarget(null) }}
+        title={planTarget ? `Change plan for "${planTarget.name}"` : 'Change plan'}
+        subtitle="The new plan's features and limits apply right away, and the owner is told by email. No payment is taken online."
+        maxWidth="lg"
+      >
+        <form
+          className="space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (planTarget) planMutation.mutate({ merchant: planTarget, plan: planChoice, cycle: cycleChoice })
+          }}
+        >
+          <div role="radiogroup" aria-label="Billing" className="inline-flex rounded-lg border border-zinc-200 bg-zinc-50 p-0.5 text-xs font-medium">
+            {(['MONTHLY', 'YEARLY'] as const).map((cycle) => (
+              <button key={cycle} type="button" role="radio" aria-checked={cycleChoice === cycle} onClick={() => setCycleChoice(cycle)} className={`rounded-md px-3 py-1.5 transition ${cycleChoice === cycle ? 'bg-zinc-900 text-white' : 'text-zinc-600 hover:text-zinc-900'}`}>
+                {cycle === 'MONTHLY' ? 'Monthly' : 'Yearly'}
+              </button>
+            ))}
+          </div>
+          <div role="radiogroup" aria-label="Plan" className="space-y-2">
+            {PLANS.map((plan) => (
+              <button
+                key={plan.code}
+                type="button"
+                role="radio"
+                aria-checked={planChoice === plan.code}
+                onClick={() => setPlanChoice(plan.code)}
+                className={`flex w-full items-start gap-3 rounded-lg border px-3.5 py-3 text-left transition ${planChoice === plan.code ? 'border-zinc-900 ring-1 ring-zinc-900' : 'border-zinc-200 hover:bg-zinc-50'}`}
+              >
+                <i className={`mt-0.5 text-base ${planChoice === plan.code ? 'ri-radio-button-line text-zinc-900' : 'ri-checkbox-blank-circle-line text-zinc-300'}`} />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="text-sm font-semibold text-zinc-900">{plan.name}</span>
+                    <span className="text-xs font-semibold text-zinc-700">${cycleChoice === 'YEARLY' ? `${plan.yearly} / year` : `${plan.monthly} / month`}</span>
+                  </span>
+                  <span className="mt-0.5 block text-xs text-zinc-500">{plan.limits}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2 border-t border-zinc-100 pt-4">
+            <button type="button" onClick={() => setPlanTarget(null)} disabled={planMutation.isPending} className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50">Cancel</button>
+            <button
+              type="submit"
+              disabled={planMutation.isPending || (planTarget !== null && planTarget.plan?.toUpperCase() === planChoice && (planTarget.billingCycle?.toUpperCase() ?? 'MONTHLY') === cycleChoice)}
+              className="rounded-lg bg-zinc-900 px-3 py-2 text-xs font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {planMutation.isPending ? 'Saving…' : 'Change plan and notify'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
       <ConfirmDialog
         isOpen={reinstateTarget !== null}
         onClose={() => setReinstateTarget(null)}
@@ -248,11 +334,12 @@ export const MerchantControlPage: React.FC = () => {
   )
 }
 
-function MerchantList({ merchants, onSuspend, onReinstate, onShowStores }: {
+function MerchantList({ merchants, onSuspend, onReinstate, onShowStores, onChangePlan }: {
   merchants: ManagedMerchant[]
   onSuspend: (merchant: ManagedMerchant) => void
   onReinstate: (merchant: ManagedMerchant) => void
   onShowStores: (merchant: ManagedMerchant) => void
+  onChangePlan: (merchant: ManagedMerchant) => void
 }) {
   if (merchants.length === 0) {
     return <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center text-sm text-zinc-500">No merchants match.</div>
@@ -261,6 +348,10 @@ function MerchantList({ merchants, onSuspend, onReinstate, onShowStores }: {
     <div className="grid gap-3 md:grid-cols-2">
       {merchants.map((merchant) => {
         const status = merchantStatus(merchant)
+        const plan = planOf(merchant)
+        const yearly = merchant.billingCycle?.toUpperCase() === 'YEARLY'
+        const trialEnds = merchant.trialEndsAt ? new Date(/[zZ]|[+-]\d{2}:\d{2}$/.test(merchant.trialEndsAt) ? merchant.trialEndsAt : `${merchant.trialEndsAt}Z`) : null
+        const trialActive = trialEnds !== null && trialEnds.getTime() > Date.now()
         return (
           <div key={merchant.id} className={`rounded-xl border bg-white p-5 shadow-2xs ${merchant.suspended ? 'border-rose-200' : 'border-zinc-200'}`}>
             <div className="flex items-start justify-between gap-3">
@@ -273,6 +364,18 @@ function MerchantList({ merchants, onSuspend, onReinstate, onShowStores }: {
             <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-zinc-600">
               <div><span className="block text-zinc-400">Registered</span>{formatTime(merchant.createdAt)}</div>
               <div><span className="block text-zinc-400">Currency / timezone</span>{merchant.defaultCurrencyCode} / {merchant.timeZone}</div>
+              <div className="col-span-2">
+                <span className="block text-zinc-400">Plan</span>
+                <span className="flex flex-wrap items-center gap-1.5">
+                  <Badge variant={plan.code === 'PRO' ? 'emerald' : plan.code === 'BUSINESS' ? 'amber' : 'slate'}>{plan.name}</Badge>
+                  {merchant.plan ? (
+                    <span>${yearly ? `${plan.yearly} / year` : `${plan.monthly} / month`}</span>
+                  ) : (
+                    <span className="text-zinc-400">No plan set (joined before plans), gets every Pro feature</span>
+                  )}
+                  {trialActive ? <span className="text-amber-700">· Trial until {trialEnds?.toLocaleDateString()}</span> : null}
+                </span>
+              </div>
             </div>
             {merchant.suspended ? (
               <div className="mt-4 rounded-lg border border-rose-100 bg-rose-50 px-3 py-2.5 text-xs text-rose-800">
@@ -284,6 +387,9 @@ function MerchantList({ merchants, onSuspend, onReinstate, onShowStores }: {
             <div className="mt-4 flex justify-end gap-2 border-t border-zinc-100 pt-4">
               <button type="button" onClick={() => onShowStores(merchant)} className="mr-auto rounded-lg px-2 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-100">
                 <i className="ri-store-2-line" /> Stores
+              </button>
+              <button type="button" onClick={() => onChangePlan(merchant)} className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50">
+                <i className="ri-vip-crown-2-line" /> Change plan
               </button>
               {merchant.suspended ? (
                 <button type="button" onClick={() => onReinstate(merchant)} className="rounded-lg bg-zinc-900 px-3 py-2 text-xs font-medium text-white hover:bg-zinc-800">Reinstate</button>

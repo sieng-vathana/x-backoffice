@@ -55,6 +55,15 @@ export const suspensionService = {
     return response.data
   },
 
+  async changePlan(id: number, plan: string, billingCycle: string): Promise<ManagedMerchant> {
+    const response = await api.request<ApiResponse<ManagedMerchant>>(`/admin/merchants/${id}/plan`, {
+      method: 'PUT',
+      body: JSON.stringify({ plan, billingCycle }),
+    })
+    if (!response.data) throw new Error(response.message || 'Could not change the plan.')
+    return response.data
+  },
+
   async suspendStore(id: number, reason: string): Promise<ManagedStore> {
     const response = await api.request<ApiResponse<ManagedStore>>(`/admin/stores/${id}/suspension`, {
       method: 'POST',
