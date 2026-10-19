@@ -9,6 +9,21 @@ import { getStoreReadiness } from '../lib/storeReadiness'
 import { businessApprovalService } from '../services/businessApprovalService'
 import { suspensionService } from '../services/suspensionService'
 
+function StatCard({ icon, tone, label, value, note }: { icon: string; tone: string; label: string; value: number | string; note: string }) {
+  return (
+    <article className="flex items-center justify-between rounded-2xl border border-line bg-white p-4">
+      <div>
+        <p className="text-xs font-semibold text-muted">{label}</p>
+        <p className="mt-1 text-3xl font-extrabold tracking-tight text-ink">{value}</p>
+        <p className="mt-1 text-xs text-slate-400">{note}</p>
+      </div>
+      <div className={`grid h-12 w-12 place-items-center rounded-2xl text-xl ${tone}`}>
+        <i className={icon} />
+      </div>
+    </article>
+  )
+}
+
 export const DashboardPage: React.FC = () => {
   const { data: pendingBusinesses = [] } = useQuery({
     queryKey: ['pendingBusinesses'],
@@ -45,120 +60,88 @@ export const DashboardPage: React.FC = () => {
     (s) => s.marketplaceStatus === 'APPROVED'
   ).length
 
+  const mixTotal = Math.max(approvedCount + pendingStores.length + categories.length + brands.length, 1)
+  const mix = [
+    { label: 'Approved Stores', value: approvedCount, color: 'bg-emerald-500' },
+    { label: 'Pending Review', value: pendingStores.length, color: 'bg-amber-400' },
+    { label: 'Categories', value: categories.length, color: 'bg-brand' },
+    { label: 'Verified Brands', value: brands.length, color: 'bg-sky-400' },
+  ]
+
   return (
-    <div className="space-y-6">
-      {/* Page Heading */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-zinc-900 tracking-tight">Overview</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">
-            Platform operations, merchant review queue, and catalog directory.
-          </p>
+    <div className="space-y-5">
+      <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#514ab0] via-brand to-[#8b84e8] text-white shadow-lg shadow-brand/25">
+        <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/70">Cambodia marketplace</p>
+            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-white">Overview</h1>
+            <p className="mt-1 max-w-xl text-sm text-white/80">
+              Platform operations, merchant review queue, and catalog directory.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/approvals" className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-brand shadow-sm hover:bg-white/90">
+              <i className="ri-verified-badge-line" />
+              <span>Review Queue</span>
+              <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs">{pendingBusinesses.length + pendingStores.length}</span>
+            </Link>
+            <Link to="/categories" className="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-white/30 hover:bg-white/25">
+              Manage Categories
+            </Link>
+          </div>
         </div>
+      </section>
 
-        <div className="flex items-center gap-2">
-          <Link
-            to="/approvals"
-            className="px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-zinc-900 hover:bg-zinc-800 transition shadow-xs flex items-center gap-1.5"
-          >
-            <i className="ri-verified-badge-line text-sm" />
-            <span>Review Queue ({pendingBusinesses.length + pendingStores.length})</span>
-          </Link>
-          <Link
-            to="/categories"
-            className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-700 bg-white border border-zinc-200 hover:bg-zinc-50 transition shadow-2xs"
-          >
-            Manage Categories
-          </Link>
-        </div>
-      </div>
-
-      {/* Action Banner (When pending > 0) */}
       {(pendingBusinesses.length > 0 || pendingStores.length > 0 || storesNeedingChanges.length > 0) && (
-        <div className="p-4 rounded-xl bg-zinc-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+        <div className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-amber-400 font-bold shrink-0">
-              <i className="ri-error-warning-line text-base" />
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-600">
+              <i className="ri-error-warning-line text-lg" />
             </div>
-            <div>
-              <div className="text-xs font-medium text-zinc-100">
-                {pendingBusinesses.length} merchant accounts and {pendingStores.length} store listings need review
+            <div className="text-sm text-amber-950">
+              <div className="font-bold">
+                <span>{pendingBusinesses.length}</span> merchant accounts and <span>{pendingStores.length}</span> store listings need review
               </div>
-              <div className="text-[11px] text-zinc-400">
+              <div className="text-amber-800">
                 {storesNeedingChanges.length} {storesNeedingChanges.length === 1 ? 'merchant is' : 'merchants are'} waiting for requested updates.
               </div>
             </div>
           </div>
-          <Link
-            to="/approvals"
-            className="self-start sm:self-auto px-3.5 py-1.5 rounded-lg text-xs font-medium text-zinc-900 bg-white hover:bg-zinc-100 transition whitespace-nowrap shadow-xs"
-          >
+          <Link to="/approvals" className="self-start rounded-xl bg-brand px-4 py-2 text-sm font-bold text-white hover:bg-brand-dark sm:self-auto">
             Open Review Queue
           </Link>
         </div>
       )}
 
-      {/* Operational Metrics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Pending Card */}
-        <div className="bg-white rounded-xl p-4 border border-zinc-200/80 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-zinc-500">Pending Review</span>
-            <span className="w-2 h-2 rounded-full bg-amber-500" />
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-semibold text-zinc-900 tracking-tight">
-              {loadingPending ? '—' : pendingStores.length}
-            </span>
-          </div>
-          <div className="mt-2 text-[11px] text-zinc-400">
-            {pendingStores.length === 0 ? 'Queue is clear' : 'Awaiting admin decision'}
-            {storesNeedingChanges.length > 0 ? ` · ${storesNeedingChanges.length} waiting for merchant` : ''}
-          </div>
-        </div>
-
-        {/* Approved Stores */}
-        <div className="bg-white rounded-xl p-4 border border-zinc-200/80 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-zinc-500">Approved Stores</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-semibold text-zinc-900 tracking-tight">
-              {approvedCount}
-            </span>
-          </div>
-          <div className="mt-2 text-[11px] text-zinc-400">Live on marketplace</div>
-        </div>
-
-        {/* Categories */}
-        <div className="bg-white rounded-xl p-4 border border-zinc-200/80 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-zinc-500">Categories</span>
-            <i className="ri-folder-shared-line text-zinc-400 text-sm" />
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-semibold text-zinc-900 tracking-tight">
-              {categories.length}
-            </span>
-          </div>
-          <div className="mt-2 text-[11px] text-zinc-400">Standard taxonomies</div>
-        </div>
-
-        {/* Brands */}
-        <div className="bg-white rounded-xl p-4 border border-zinc-200/80 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-zinc-500">Verified Brands</span>
-            <i className="ri-price-tag-3-line text-zinc-400 text-sm" />
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-semibold text-zinc-900 tracking-tight">
-              {brands.length}
-            </span>
-          </div>
-          <div className="mt-2 text-[11px] text-zinc-400">Product manufacturers</div>
-        </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard icon="ri-time-line" tone="bg-amber-50 text-amber-600" label="Pending Review" value={loadingPending ? '—' : pendingStores.length} note={pendingStores.length === 0 ? 'Queue is clear' : 'Awaiting admin decision'} />
+        <StatCard icon="ri-store-2-line" tone="bg-emerald-50 text-emerald-600" label="Approved Stores" value={approvedCount} note="Live on marketplace" />
+        <StatCard icon="ri-folder-shared-line" tone="bg-brand-soft text-brand" label="Categories" value={categories.length} note="Standard taxonomies" />
+        <StatCard icon="ri-price-tag-3-line" tone="bg-sky-50 text-sky-600" label="Verified Brands" value={brands.length} note="Product manufacturers" />
       </div>
+
+      <section className="rounded-2xl border border-line bg-white p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-bold text-ink">Catalog mix</h2>
+            <p className="mt-0.5 text-xs text-muted">Approved stores, the review queue, categories, and brands.</p>
+          </div>
+        </div>
+        <div className="mt-4 flex h-3 overflow-hidden rounded-full bg-[#f3f4f8]">
+          {mix.map((part) => (
+            <div key={part.label} className={part.color} style={{ width: `${(part.value / mixTotal) * 100}%` }} />
+          ))}
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {mix.map((part) => (
+            <div key={part.label} className="flex items-center gap-2 text-xs font-semibold text-muted">
+              <span className={`h-2.5 w-2.5 rounded-full ${part.color}`} />
+              <span>{part.label}</span>
+              <span className="ml-auto text-ink">{part.value}</span>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* Pending Applications Section */}
       <div className="bg-white rounded-xl border border-zinc-200 shadow-2xs overflow-hidden">

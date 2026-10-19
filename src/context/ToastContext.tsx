@@ -48,7 +48,9 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         {toasts.map((t) => (
           <div
             key={t.id}
-            className="pointer-events-auto flex items-start gap-2.5 p-3 rounded-lg bg-white border border-zinc-200 shadow-md text-xs font-medium text-zinc-900 transition-all animate-in slide-in-from-bottom-2"
+            className={`pointer-events-auto flex items-start gap-2.5 rounded-xl border border-line border-l-4 bg-white p-3 text-sm font-semibold text-ink shadow-lg ${
+              t.type === 'success' ? 'border-l-emerald-500' : t.type === 'error' ? 'border-l-rose-500' : t.type === 'warning' ? 'border-l-amber-500' : 'border-l-brand'
+            }`}
           >
             <i
               className={`text-base shrink-0 mt-0.5 ${

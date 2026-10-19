@@ -42,10 +42,11 @@ export const Modal: React.FC<ModalProps> = ({
       <div className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity" onClick={onClose} />
       <div className="min-h-full flex items-center justify-center p-4">
         <div
-          className={`relative bg-white rounded-xl shadow-xl border border-zinc-200 w-full ${widthMap[maxWidth]} overflow-hidden transform transition-all`}
+          className={`relative w-full ${widthMap[maxWidth]} overflow-hidden rounded-2xl border border-line bg-white shadow-2xl`}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 bg-zinc-50/50">
+          <div className="h-1 bg-brand" />
+          <div className="flex items-center justify-between border-b border-line bg-[#f8f9fc] px-6 py-4">
             <div>
               <h3 className="text-sm font-semibold text-zinc-900">{title}</h3>
               {subtitle && <p className="text-xs text-zinc-500 mt-0.5">{subtitle}</p>}

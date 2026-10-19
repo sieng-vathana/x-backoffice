@@ -197,7 +197,7 @@ export const AdminOperationsPage: React.FC = () => {
             {[42, 57, 48, 71, 64, 86, 100].map((height, index) => (
               <div key={index} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
                 <span className="text-[10px] font-medium text-zinc-500">{Math.round(height * 2.86)}</span>
-                <div className="w-full max-w-12 rounded-t-md bg-gradient-to-t from-zinc-800 to-zinc-500" style={{ height: `${height}%` }} />
+                <div className="w-full max-w-12 rounded-t-md bg-gradient-to-t from-brand-dark to-[#8b84e8]" style={{ height: `${height}%` }} />
                 <span className="text-[10px] text-zinc-400">{['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index]}</span>
               </div>
             ))}

@@ -16,9 +16,9 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center">
-        <div className="text-center text-zinc-500">
-          <i className="ri-loader-4-line text-2xl animate-spin text-zinc-600 inline-block mb-2" />
+      <div className="flex min-h-screen items-center justify-center bg-canvas">
+        <div className="text-center text-muted">
+          <i className="ri-loader-4-line mb-2 inline-block animate-spin text-2xl text-brand" />
           <div className="text-xs font-medium text-zinc-500">
             Authenticating...
           </div>

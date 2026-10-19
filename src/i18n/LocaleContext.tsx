@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { khmerTranslations } from './khmer'
+import { backofficeKhmer } from './khmer-backoffice'
 
 export type PortalLanguage = 'en' | 'km'
 
@@ -10,7 +11,7 @@ type LocaleContextValue = {
 }
 
 const STORAGE_KEY = 'vpos.backoffice-language'
-const translationCatalog: Record<string, string> = khmerTranslations
+const translationCatalog: Record<string, string> = { ...khmerTranslations, ...backofficeKhmer }
 const lowerCatalog = new Map<string, string>()
 for (const [key, val] of Object.entries(translationCatalog)) {
   const lk = key.toLowerCase()

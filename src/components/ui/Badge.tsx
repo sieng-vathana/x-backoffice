@@ -19,7 +19,7 @@ export const Badge: React.FC<BadgeProps> = ({
     rose: 'bg-rose-50 text-rose-700 border-rose-200/80',
     slate: 'bg-zinc-100 text-zinc-700 border-zinc-200',
     zinc: 'bg-zinc-100 text-zinc-700 border-zinc-200',
-    indigo: 'bg-zinc-100 text-zinc-800 border-zinc-300 font-medium',
+    indigo: 'bg-brand-soft text-brand border-brand/20 font-semibold',
     blue: 'bg-sky-50 text-sky-700 border-sky-200/80',
   }
 
@@ -29,7 +29,7 @@ export const Badge: React.FC<BadgeProps> = ({
     rose: 'bg-rose-500',
     slate: 'bg-zinc-400',
     zinc: 'bg-zinc-400',
-    indigo: 'bg-zinc-600',
+    indigo: 'bg-brand',
     blue: 'bg-sky-500',
   }
 
