@@ -5,6 +5,7 @@ import { AppLayout } from './components/layout/AppLayout'
 import { DashboardPage } from './pages/DashboardPage'
 import { ApprovalsPage } from './pages/ApprovalsPage'
 import { StoresPage } from './pages/StoresPage'
+import { MerchantControlPage } from './pages/MerchantControlPage'
 import { CategoriesPage } from './pages/CategoriesPage'
 import { BrandsPage } from './pages/BrandsPage'
 import { AdminOperationsPage } from './pages/AdminOperationsPage'
@@ -49,6 +50,7 @@ export const App: React.FC = () => {
         <Route index element={<DashboardPage />} />
         <Route path="approvals" element={<ApprovalsPage />} />
         <Route path="stores" element={<StoresPage />} />
+        <Route path="merchants" element={<MerchantControlPage />} />
         <Route path="categories" element={<CategoriesPage />} />
         <Route path="brands" element={<BrandsPage />} />
         <Route path="operations/:section" element={<AdminOperationsPage />} />

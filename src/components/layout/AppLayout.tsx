@@ -40,6 +40,7 @@ export const AppLayout: React.FC = () => {
     { label: 'Merchant network', items: [
       { to: '/approvals', label: 'Merchant approvals', icon: 'ri-verified-badge-line', activeIcon: 'ri-verified-badge-fill', badge: pendingCount > 0 ? pendingCount : null },
       { to: '/stores', label: 'Stores directory', icon: 'ri-store-2-line', activeIcon: 'ri-store-2-fill' },
+      { to: '/merchants', label: 'Merchant control', icon: 'ri-shield-user-line', activeIcon: 'ri-shield-user-fill' },
     ] },
     { label: 'Marketplace catalog', items: [
       { to: '/categories', label: 'Categories', icon: 'ri-folder-shared-line', activeIcon: 'ri-folder-shared-fill' },
