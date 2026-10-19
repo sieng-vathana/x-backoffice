@@ -9,6 +9,7 @@ import { RequestChangesDialog } from '../components/RequestChangesDialog'
 import { useToast } from '../context/ToastContext'
 import type { MarketplaceStatus, StoreResponse } from '../types/store'
 import { getStoreReadiness } from '../lib/storeReadiness'
+import { suspensionService } from '../services/suspensionService'
 
 export const StoresPage: React.FC = () => {
   const queryClient = useQueryClient()
@@ -33,10 +34,10 @@ export const StoresPage: React.FC = () => {
     queryFn: () => storeService.getMarketplaceStoresNeedingChanges(),
   })
 
-  // Load stores from business 1 (and general stores list)
-  const { data: businessStores = { content: [] }, isLoading: loadingBusiness } = useQuery({
-    queryKey: ['businessStores'],
-    queryFn: () => storeService.getStoresByBusiness(1, 0, 100),
+  // Backoffice needs the platform-wide directory, not stores for a hard-coded business.
+  const { data: adminStores = [], isLoading: loadingAdminStores } = useQuery({
+    queryKey: ['adminStoresDirectory'],
+    queryFn: () => suspensionService.stores('', ''),
   })
 
   // Merge and deduplicate stores
@@ -44,11 +45,11 @@ export const StoresPage: React.FC = () => {
     const map = new Map<number, StoreResponse>()
     pendingStores.forEach((s) => map.set(s.id, s))
     storesNeedingChanges.forEach((s) => map.set(s.id, s))
-    businessStores.content.forEach((s) => {
+    adminStores.forEach((s) => {
       if (!map.has(s.id)) map.set(s.id, s)
     })
     return Array.from(map.values())
-  }, [pendingStores, storesNeedingChanges, businessStores])
+  }, [pendingStores, storesNeedingChanges, adminStores])
 
   const filteredStores = useMemo(() => {
     return allStores.filter((store) => {
@@ -81,7 +82,7 @@ export const StoresPage: React.FC = () => {
       if (inspectStore?.id === updated.id) setInspectStore(updated)
       queryClient.invalidateQueries({ queryKey: ['pendingStores'] })
       queryClient.invalidateQueries({ queryKey: ['marketplaceStoresNeedingChanges'] })
-      queryClient.invalidateQueries({ queryKey: ['businessStores'] })
+      queryClient.invalidateQueries({ queryKey: ['adminStoresDirectory'] })
     },
     onError: (err: any) => error(err.message || 'Failed to approve.'),
   })
@@ -96,7 +97,7 @@ export const StoresPage: React.FC = () => {
       if (inspectStore?.id === updated.id) setInspectStore(updated)
       queryClient.invalidateQueries({ queryKey: ['pendingStores'] })
       queryClient.invalidateQueries({ queryKey: ['marketplaceStoresNeedingChanges'] })
-      queryClient.invalidateQueries({ queryKey: ['businessStores'] })
+      queryClient.invalidateQueries({ queryKey: ['adminStoresDirectory'] })
     },
     onError: (err: any) => error(err.message || 'Failed to reject.'),
   })
@@ -109,7 +110,7 @@ export const StoresPage: React.FC = () => {
       if (inspectStore?.id === updated.id) setInspectStore(null)
       queryClient.invalidateQueries({ queryKey: ['pendingStores'] })
       queryClient.invalidateQueries({ queryKey: ['marketplaceStoresNeedingChanges'] })
-      queryClient.invalidateQueries({ queryKey: ['businessStores'] })
+      queryClient.invalidateQueries({ queryKey: ['adminStoresDirectory'] })
     },
     onError: (err: any) => error(err.message || 'Failed to request merchant updates.'),
   })
@@ -154,7 +155,7 @@ export const StoresPage: React.FC = () => {
     }
   }
 
-  const isLoading = loadingPending || loadingChanges || loadingBusiness
+  const isLoading = loadingPending || loadingChanges || loadingAdminStores
 
   return (
     <div className="space-y-6">
