@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { khmerTranslations } from './khmer'
-import { backofficeKhmer } from './khmer-backoffice'
+import { khmerTemplates } from './khmer-templates'
 
 export type PortalLanguage = 'en' | 'km'
 
@@ -11,7 +11,7 @@ type LocaleContextValue = {
 }
 
 const STORAGE_KEY = 'vpos.backoffice-language'
-const translationCatalog: Record<string, string> = { ...khmerTranslations, ...backofficeKhmer }
+const translationCatalog: Record<string, string> = khmerTranslations
 const lowerCatalog = new Map<string, string>()
 for (const [key, val] of Object.entries(translationCatalog)) {
   const lk = key.toLowerCase()
@@ -20,7 +20,26 @@ for (const [key, val] of Object.entries(translationCatalog)) {
 
 const LocaleContext = createContext<LocaleContextValue | null>(null)
 
-/** Khmer for a whole text: exact match, punctuation handling, case-insensitive fallback. */
+type TemplatePattern = { anchor: string; pattern: RegExp; slots: number[]; translation: string; numericOnly: boolean }
+
+const templatePatterns: TemplatePattern[] = Object.entries(khmerTemplates).map(([english, translation]) => {
+  const parts = english.split(/\{(\d+)\}/)
+  const slots: number[] = []
+  let source = '^'
+  parts.forEach((part, index) => {
+    if (index % 2 === 0) source += part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    else {
+      slots.push(Number(part))
+      source += '([\\s\\S]*?)'
+    }
+  })
+  const literals = parts.filter((_, index) => index % 2 === 0)
+  const anchor = [...literals].sort((a, b) => b.length - a.length)[0] ?? ''
+  const numericOnly = literals.join('').trim().length < 10
+  return { anchor, pattern: new RegExp(`${source}$`), slots, translation, numericOnly }
+})
+
+/** Khmer for a whole text: exact match, punctuation handling, case-insensitive fallback, or template. */
 export function lookup(text: string): string | undefined {
   if (!text) return undefined
 
@@ -49,6 +68,29 @@ export function lookup(text: string): string | undefined {
   // 4. Case-insensitive fallback
   const lower = lowerCatalog.get(text.toLowerCase())
   if (lower !== undefined) return lower
+
+  // 5. Template patterns
+  for (const template of templatePatterns) {
+    if (template.anchor && !text.includes(template.anchor)) continue
+    const match = template.pattern.exec(text)
+    if (!match) continue
+
+    if (template.numericOnly) {
+      const captured = match.slice(1)
+      const valid = captured.some((val) => {
+        const trimmed = val.trim()
+        return /\d/.test(trimmed) || translationCatalog[trimmed] !== undefined || lowerCatalog.has(trimmed.toLowerCase())
+      })
+      if (!valid) continue
+    }
+
+    const values = new Map(template.slots.map((slot, index) => [slot, match[index + 1]]))
+    return template.translation.replace(/\{(\d+)\}/g, (_, slot: string) => {
+      const value = values.get(Number(slot)) ?? ''
+      const trimmed = value.trim()
+      return lookup(trimmed) ?? value
+    })
+  }
 
   return undefined
 }
