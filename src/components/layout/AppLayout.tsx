@@ -98,7 +98,8 @@ export const AppLayout: React.FC = () => {
       label: 'Customer & fulfillment',
       items: [
         { to: '/operations/customers', label: 'Customers', icon: 'ri-user-heart-line', activeIcon: 'ri-user-heart-fill', preview: true },
-        { to: '/operations/delivery', label: 'Delivery operations', icon: 'ri-e-bike-2-line', activeIcon: 'ri-e-bike-2-fill', preview: true },
+        { to: '/delivery-setup', label: 'Store delivery setup', icon: 'ri-e-bike-2-line', activeIcon: 'ri-e-bike-2-fill' },
+        { to: '/operations/delivery', label: 'Delivery operations', icon: 'ri-route-line', activeIcon: 'ri-route-fill', preview: true },
       ],
     },
     {
@@ -116,6 +117,7 @@ export const AppLayout: React.FC = () => {
     '/merchants': 'Merchant control',
     '/categories': 'Categories',
     '/brands': 'Brands',
+    '/delivery-setup': 'Store delivery setup',
     '/operations/orders': 'Order control',
     '/operations/customers': 'Customers',
     '/operations/delivery': 'Delivery operations',

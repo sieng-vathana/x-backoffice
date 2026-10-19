@@ -10,6 +10,7 @@ import { CategoriesPage } from './pages/CategoriesPage'
 import { BrandsPage } from './pages/BrandsPage'
 import { AdminOperationsPage } from './pages/AdminOperationsPage'
 import { SignInPage } from './pages/SignInPage'
+import { DeliverySetupPage } from './pages/DeliverySetupPage'
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth()
@@ -53,6 +54,7 @@ export const App: React.FC = () => {
         <Route path="merchants" element={<MerchantControlPage />} />
         <Route path="categories" element={<CategoriesPage />} />
         <Route path="brands" element={<BrandsPage />} />
+        <Route path="delivery-setup" element={<DeliverySetupPage />} />
         <Route path="operations/:section" element={<AdminOperationsPage />} />
       </Route>
 
