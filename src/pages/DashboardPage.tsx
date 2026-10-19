@@ -7,6 +7,7 @@ import { brandService } from '../services/brandService'
 import { Badge } from '../components/ui/Badge'
 import { getStoreReadiness } from '../lib/storeReadiness'
 import { businessApprovalService } from '../services/businessApprovalService'
+import { suspensionService } from '../services/suspensionService'
 
 export const DashboardPage: React.FC = () => {
   const { data: pendingBusinesses = [] } = useQuery({
@@ -34,13 +35,13 @@ export const DashboardPage: React.FC = () => {
     queryFn: () => brandService.getBrands(),
   })
 
-  // Load stores for real count
-  const { data: businessStores = { content: [] } } = useQuery({
-    queryKey: ['businessStores'],
-    queryFn: () => storeService.getStoresByBusiness(1, 0, 100),
+  // Platform overview counts stores across all businesses.
+  const { data: adminStores = [] } = useQuery({
+    queryKey: ['adminStoresDirectory'],
+    queryFn: () => suspensionService.stores('', ''),
   })
 
-  const approvedCount = businessStores.content.filter(
+  const approvedCount = adminStores.filter(
     (s) => s.marketplaceStatus === 'APPROVED'
   ).length
 
