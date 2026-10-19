@@ -7,6 +7,9 @@
   description?: string
   status?: string
   isPlatform?: boolean
+  isFeatured?: boolean
+  isGlobal?: boolean
+  storeIds?: number[]
 }
 
 export interface CreateBrandRequest {
@@ -14,4 +17,8 @@ export interface CreateBrandRequest {
   code?: string
   logoUrl?: string
   description?: string
+  isFeatured?: boolean
+  isGlobal?: boolean
+  status?: string
+  storeIds?: number[]
 }

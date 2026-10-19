@@ -44,7 +44,13 @@ export const BrandsPage: React.FC = () => {
     description: '',
   })
 
-  const { data: brands = [], isLoading } = useQuery({
+  const {
+    data: brands = [],
+    isLoading,
+    isError: brandsLoadFailed,
+    error: brandsLoadError,
+    refetch: refetchBrands,
+  } = useQuery({
     queryKey: ['brands'],
     queryFn: () => brandService.getBrands(),
   })
@@ -98,6 +104,10 @@ export const BrandsPage: React.FC = () => {
       code: brand.code || '',
       logoUrl: brand.logoUrl || '',
       description: brand.description || '',
+      isFeatured: brand.isFeatured ?? false,
+      isGlobal: brand.isGlobal ?? true,
+      status: brand.status ?? 'ACTIVE',
+      storeIds: brand.storeIds ?? [],
     })
   }
 
@@ -152,6 +162,20 @@ export const BrandsPage: React.FC = () => {
           <div className="p-16 text-center text-zinc-400">
             <i className="ri-loader-4-line text-2xl animate-spin text-zinc-500 inline-block mb-2" />
             <div className="text-xs font-medium">Loading brands directory...</div>
+          </div>
+        ) : brandsLoadFailed ? (
+          <div className="p-12 text-center">
+            <p className="text-sm font-semibold text-zinc-900">Could not load brands from the database.</p>
+            <p className="mt-1 text-xs text-zinc-500">
+              {brandsLoadError instanceof Error ? brandsLoadError.message : 'Check your connection and try again.'}
+            </p>
+            <button
+              type="button"
+              onClick={() => void refetchBrands()}
+              className="mt-4 rounded-lg bg-zinc-900 px-3 py-2 text-xs font-medium text-white hover:bg-zinc-800"
+            >
+              Retry
+            </button>
           </div>
         ) : filteredBrands.length === 0 ? (
           <div className="p-16 text-center text-zinc-500">

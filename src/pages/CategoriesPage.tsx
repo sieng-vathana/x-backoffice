@@ -59,7 +59,13 @@ export const CategoriesPage: React.FC = () => {
     featured: false,
   })
 
-  const { data: categories = [], isLoading } = useQuery({
+  const {
+    data: categories = [],
+    isLoading,
+    isError: categoriesLoadFailed,
+    error: categoriesLoadError,
+    refetch: refetchCategories,
+  } = useQuery({
     queryKey: ['categories'],
     queryFn: () => categoryService.getMarketplaceCategories(),
   })
@@ -113,6 +119,11 @@ export const CategoriesPage: React.FC = () => {
       code: cat.code || '',
       image: cat.image || '',
       featured: cat.featured ?? false,
+      description: cat.description || '',
+      sortOrder: cat.sortOrder ?? 0,
+      isGlobal: cat.isGlobal ?? true,
+      status: cat.status ?? 'ACTIVE',
+      storeIds: cat.storeIds ?? [],
     })
   }
 
@@ -167,6 +178,20 @@ export const CategoriesPage: React.FC = () => {
           <div className="p-16 text-center text-zinc-400">
             <i className="ri-loader-4-line text-2xl animate-spin text-zinc-500 inline-block mb-2" />
             <div className="text-xs font-medium">Loading marketplace categories...</div>
+          </div>
+        ) : categoriesLoadFailed ? (
+          <div className="p-12 text-center">
+            <p className="text-sm font-semibold text-zinc-900">Could not load categories from the database.</p>
+            <p className="mt-1 text-xs text-zinc-500">
+              {categoriesLoadError instanceof Error ? categoriesLoadError.message : 'Check your connection and try again.'}
+            </p>
+            <button
+              type="button"
+              onClick={() => void refetchCategories()}
+              className="mt-4 rounded-lg bg-zinc-900 px-3 py-2 text-xs font-medium text-white hover:bg-zinc-800"
+            >
+              Retry
+            </button>
           </div>
         ) : filteredCategories.length === 0 ? (
           <div className="p-16 text-center text-zinc-500">
