@@ -7,6 +7,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   isLoading: boolean
   signIn: (input: SignInInput) => Promise<void>
+  signInWithTelegram: (input: { username: string; challengeToken: string; code: string }) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -45,6 +46,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(loggedIn)
   }, [])
 
+  const signInWithTelegram = useCallback(async (input: { username: string; challengeToken: string; code: string }) => {
+    const loggedIn = await authService.verifyTelegramSignIn(input)
+    setUser(loggedIn)
+  }, [])
+
   const signOut = useCallback(async () => {
     await authService.logout()
     setUser(null)
@@ -57,6 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: Boolean(user),
         isLoading,
         signIn,
+        signInWithTelegram,
         signOut,
       }}
     >

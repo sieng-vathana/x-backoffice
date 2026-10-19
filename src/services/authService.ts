@@ -14,6 +14,22 @@ interface BackendAuthData {
   }
   accessToken?: string
   refreshToken?: string
+  mfaRequired?: boolean
+  mfaMethod?: string
+  mfaChallengeToken?: string
+  mfaExpiresAt?: string
+}
+
+export class TelegramMfaRequiredError extends Error {
+  readonly challengeToken: string
+  readonly expiresAt?: string
+
+  constructor(challengeToken: string, expiresAt?: string) {
+    super('Enter the Telegram code to finish signing in.')
+    this.name = 'TelegramMfaRequiredError'
+    this.challengeToken = challengeToken
+    this.expiresAt = expiresAt
+  }
 }
 
 function mapUser(data: BackendAuthData['user']): AuthenticatedUser {
@@ -50,6 +66,10 @@ export const authService = {
       body: JSON.stringify(input),
     })
 
+    if (res.data?.mfaRequired && res.data.mfaChallengeToken) {
+      throw new TelegramMfaRequiredError(res.data.mfaChallengeToken, res.data.mfaExpiresAt)
+    }
+
     if (!res.data?.user) {
       throw new Error(res.message || 'Invalid credentials or user not returned.')
     }
@@ -58,6 +78,17 @@ export const authService = {
       writeStoredValue(AUTH_TOKEN_KEY, res.data.accessToken)
     }
 
+    const user = mapUser(res.data.user)
+    writeStoredValue(AUTH_USER_KEY, user)
+    return user
+  },
+
+  async verifyTelegramSignIn(input: { username: string; challengeToken: string; code: string }): Promise<AuthenticatedUser> {
+    const res = await api.request<ApiResponse<BackendAuthData>>('/auth/verify-telegram', {
+      method: 'POST', body: JSON.stringify(input),
+    })
+    if (!res.data?.user) throw new Error(res.message || 'The Telegram code could not be verified.')
+    if (res.data.accessToken) writeStoredValue(AUTH_TOKEN_KEY, res.data.accessToken)
     const user = mapUser(res.data.user)
     writeStoredValue(AUTH_USER_KEY, user)
     return user
