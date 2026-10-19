@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { storeService } from '../../services/storeService'
+import { businessApprovalService } from '../../services/businessApprovalService'
 
 export const AppLayout: React.FC = () => {
   const { user, signOut } = useAuth()
@@ -17,7 +18,13 @@ export const AppLayout: React.FC = () => {
     refetchInterval: 15000,
   })
 
-  const pendingCount = pendingStores.length
+  const { data: pendingBusinesses = [] } = useQuery({
+    queryKey: ['pendingBusinesses'],
+    queryFn: businessApprovalService.pending,
+    refetchInterval: 15000,
+  })
+
+  const pendingCount = pendingStores.length + pendingBusinesses.length
 
   const handleSignOut = async () => {
     await signOut()

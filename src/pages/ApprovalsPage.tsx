@@ -9,6 +9,7 @@ import { RequestChangesDialog } from '../components/RequestChangesDialog'
 import { useToast } from '../context/ToastContext'
 import type { StoreResponse } from '../types/store'
 import { getStoreReadiness } from '../lib/storeReadiness'
+import { businessApprovalService, type BusinessApproval } from '../services/businessApprovalService'
 
 export const ApprovalsPage: React.FC = () => {
   const queryClient = useQueryClient()
@@ -21,6 +22,36 @@ export const ApprovalsPage: React.FC = () => {
   const [rejectTarget, setRejectTarget] = useState<StoreResponse | null>(null)
   const [requestChangesTarget, setRequestChangesTarget] = useState<StoreResponse | null>(null)
   const [rejectReason, setRejectReason] = useState('')
+  const [businessSearch, setBusinessSearch] = useState('')
+  const [approveBusinessTarget, setApproveBusinessTarget] = useState<BusinessApproval | null>(null)
+  const [rejectBusinessTarget, setRejectBusinessTarget] = useState<BusinessApproval | null>(null)
+  const [businessRejectReason, setBusinessRejectReason] = useState('')
+
+  const { data: pendingBusinesses = [], isLoading: loadingBusinesses, isError: businessesFailed, refetch: refetchBusinesses } = useQuery({
+    queryKey: ['pendingBusinesses'],
+    queryFn: businessApprovalService.pending,
+  })
+
+  const approveBusinessMutation = useMutation({
+    mutationFn: businessApprovalService.approve,
+    onSuccess: (business) => {
+      success(`Merchant "${business.name}" approved. Its stores can now be reviewed for the marketplace.`)
+      setApproveBusinessTarget(null)
+      queryClient.invalidateQueries({ queryKey: ['pendingBusinesses'] })
+    },
+    onError: (err: Error) => error(err.message || 'Failed to approve merchant.'),
+  })
+
+  const rejectBusinessMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason: string }) => businessApprovalService.reject(id, reason),
+    onSuccess: (business) => {
+      success(`Merchant "${business.name}" was rejected.`)
+      setRejectBusinessTarget(null)
+      setBusinessRejectReason('')
+      queryClient.invalidateQueries({ queryKey: ['pendingBusinesses'] })
+    },
+    onError: (err: Error) => error(err.message || 'Failed to reject merchant.'),
+  })
 
   const { data: pendingStores = [], isLoading, refetch } = useQuery({
     queryKey: ['pendingStores'],
@@ -103,22 +134,64 @@ export const ApprovalsPage: React.FC = () => {
           <h1 className="text-xl font-semibold text-zinc-900 tracking-tight flex items-center gap-2.5">
             <span>Merchant Approvals</span>
             <Badge variant="amber" dot>
-              {pendingStores.length} To review
+              {pendingBusinesses.length + pendingStores.length} To review
             </Badge>
           </h1>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Check listing readiness, request missing information, and approve complete merchant applications.
+            Review new merchant accounts first, then approve each store listing when it is ready.
           </p>
         </div>
 
         <button
-          onClick={() => { void refetch(); void refetchChanges() }}
+          onClick={() => { void refetchBusinesses(); void refetch(); void refetchChanges() }}
           className="self-start sm:self-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 shadow-2xs flex items-center gap-1.5 transition"
         >
           <i className="ri-refresh-line text-sm text-zinc-500" />
           Refresh
         </button>
       </div>
+
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-zinc-900">New merchant accounts</h2>
+            <p className="text-xs text-zinc-500">New businesses stay pending until a backoffice administrator approves them.</p>
+          </div>
+          <Badge variant="amber" dot>{pendingBusinesses.length} pending</Badge>
+        </div>
+        <input
+          value={businessSearch}
+          onChange={(event) => setBusinessSearch(event.target.value)}
+          placeholder="Search merchant name, code, or owner ID"
+          aria-label="Search merchant accounts"
+          className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900"
+        />
+        {loadingBusinesses ? <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center text-sm text-zinc-500">Loading merchants...</div>
+          : businessesFailed ? <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-800">Could not load merchant applications. <button type="button" onClick={() => void refetchBusinesses()} className="font-semibold underline">Retry</button></div>
+          : pendingBusinesses.filter((business) => `${business.name} ${business.code} ${business.ownerUserId}`.toLowerCase().includes(businessSearch.toLowerCase())).length === 0
+            ? <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center text-sm text-zinc-500">No pending merchant accounts.</div>
+            : <div className="grid gap-3 md:grid-cols-2">
+              {pendingBusinesses.filter((business) => `${business.name} ${business.code} ${business.ownerUserId}`.toLowerCase().includes(businessSearch.toLowerCase())).map((business) => (
+                <div key={business.id} className="rounded-xl border border-zinc-200 bg-white p-5 shadow-2xs">
+                  <div className="flex items-start justify-between gap-3">
+                    <div><h3 className="text-sm font-semibold text-zinc-900">{business.name}</h3><p className="mt-1 text-xs text-zinc-500">{business.code} / Owner #{business.ownerUserId} / Business #{business.id}</p></div>
+                    <Badge variant="amber" dot>Pending</Badge>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-zinc-600">
+                    <div><span className="block text-zinc-400">Tax registration</span>{business.taxRegistrationNumber || 'Not provided'}</div>
+                    <div><span className="block text-zinc-400">Currency / timezone</span>{business.defaultCurrencyCode} / {business.timeZone}</div>
+                    <div><span className="block text-zinc-400">Registered</span>{business.createdAt ? new Date(business.createdAt).toLocaleString() : 'N/A'}</div>
+                  </div>
+                  <div className="mt-4 flex justify-end gap-2 border-t border-zinc-100 pt-4">
+                    <button type="button" onClick={() => { setRejectBusinessTarget(business); setBusinessRejectReason('') }} className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50">Reject</button>
+                    <button type="button" onClick={() => setApproveBusinessTarget(business)} className="rounded-lg bg-zinc-900 px-3 py-2 text-xs font-medium text-white hover:bg-zinc-800">Approve merchant</button>
+                  </div>
+                </div>
+              ))}
+            </div>}
+      </section>
+
+      <h2 className="text-base font-semibold text-zinc-900">Store listing applications</h2>
 
       {/* Review queues and search */}
       <div className="bg-white p-3 rounded-xl border border-zinc-200 shadow-2xs space-y-3">
@@ -460,6 +533,23 @@ export const ApprovalsPage: React.FC = () => {
         onClose={() => setRequestChangesTarget(null)}
         onSubmit={(reason) => requestChangesTarget && requestChangesMutation.mutate({ id: requestChangesTarget.id, reason })}
       />
+
+      {approveBusinessTarget && <ConfirmDialog
+        isOpen onClose={() => setApproveBusinessTarget(null)}
+        onConfirm={() => approveBusinessMutation.mutate(approveBusinessTarget.id)}
+        title="Approve merchant account"
+        message={`Approve ${approveBusinessTarget.name}? The merchant can then submit stores for marketplace review.`}
+        confirmText="Approve merchant" isLoading={approveBusinessMutation.isPending}
+      />}
+      {rejectBusinessTarget && <ConfirmDialog
+        isOpen onClose={() => setRejectBusinessTarget(null)}
+        onConfirm={() => { if (businessRejectReason.trim()) rejectBusinessMutation.mutate({ id: rejectBusinessTarget.id, reason: businessRejectReason.trim() }); else error('Enter a rejection reason.') }}
+        title="Reject merchant account"
+        message={`Tell ${rejectBusinessTarget.name} what needs to change before resubmission.`}
+        confirmText="Reject merchant" variant="danger" isLoading={rejectBusinessMutation.isPending}
+      >
+        <textarea value={businessRejectReason} onChange={(event) => setBusinessRejectReason(event.target.value)} maxLength={1000} placeholder="Reason for rejection" aria-label="Rejection reason" className="min-h-24 w-full rounded-lg border border-zinc-300 p-3 text-sm" />
+      </ConfirmDialog>}
     </div>
   )
 }

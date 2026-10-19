@@ -6,8 +6,13 @@ import { categoryService } from '../services/categoryService'
 import { brandService } from '../services/brandService'
 import { Badge } from '../components/ui/Badge'
 import { getStoreReadiness } from '../lib/storeReadiness'
+import { businessApprovalService } from '../services/businessApprovalService'
 
 export const DashboardPage: React.FC = () => {
+  const { data: pendingBusinesses = [] } = useQuery({
+    queryKey: ['pendingBusinesses'],
+    queryFn: businessApprovalService.pending,
+  })
   // Queries
   const { data: pendingStores = [], isLoading: loadingPending } = useQuery({
     queryKey: ['pendingStores'],
@@ -56,7 +61,7 @@ export const DashboardPage: React.FC = () => {
             className="px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-zinc-900 hover:bg-zinc-800 transition shadow-xs flex items-center gap-1.5"
           >
             <i className="ri-verified-badge-line text-sm" />
-            <span>Review Queue ({pendingStores.length})</span>
+            <span>Review Queue ({pendingBusinesses.length + pendingStores.length})</span>
           </Link>
           <Link
             to="/categories"
@@ -68,7 +73,7 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* Action Banner (When pending > 0) */}
-      {(pendingStores.length > 0 || storesNeedingChanges.length > 0) && (
+      {(pendingBusinesses.length > 0 || pendingStores.length > 0 || storesNeedingChanges.length > 0) && (
         <div className="p-4 rounded-xl bg-zinc-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-amber-400 font-bold shrink-0">
@@ -76,7 +81,7 @@ export const DashboardPage: React.FC = () => {
             </div>
             <div>
               <div className="text-xs font-medium text-zinc-100">
-                {pendingStores.length > 0 ? `${pendingStores.length} application${pendingStores.length === 1 ? '' : 's'} need review` : 'No applications need review'}
+                {pendingBusinesses.length} merchant accounts and {pendingStores.length} store listings need review
               </div>
               <div className="text-[11px] text-zinc-400">
                 {storesNeedingChanges.length} {storesNeedingChanges.length === 1 ? 'merchant is' : 'merchants are'} waiting for requested updates.
