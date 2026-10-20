@@ -275,6 +275,10 @@ export const ApprovalsPage: React.FC = () => {
                     <span className="text-zinc-800 font-medium">{store.storeType || 'General Retail'}</span>
                   </div>
                   <div>
+                    <span className="text-zinc-400 block text-[10px] font-medium uppercase tracking-wider">Sales Mode</span>
+                    <span className="text-zinc-800 font-medium">{store.salesChannel === 'POS' ? 'POS only' : store.salesChannel === 'ONLINE' ? 'Online store only' : 'POS + Online'}</span>
+                  </div>
+                  <div>
                     <span className="text-zinc-400 block text-[10px] font-medium uppercase tracking-wider">Location</span>
                     <span className="text-zinc-800 font-medium truncate block">
                       {store.city || store.addressLine1 || 'Phnom Penh'}
@@ -388,6 +392,10 @@ export const ApprovalsPage: React.FC = () => {
               <div>
                 <span className="text-zinc-400 block text-[10px] font-medium uppercase tracking-wider">Store Type</span>
                 <span className="text-zinc-800">{activeDossier.storeType || 'General Retail'}</span>
+              </div>
+              <div>
+                <span className="text-zinc-400 block text-[10px] font-medium uppercase tracking-wider">Sales Mode</span>
+                <span className="text-zinc-800">{activeDossier.salesChannel === 'POS' ? 'POS only' : activeDossier.salesChannel === 'ONLINE' ? 'Online store only' : 'POS + Online'}</span>
               </div>
               <div>
                 <span className="text-zinc-400 block text-[10px] font-medium uppercase tracking-wider">Phone</span>

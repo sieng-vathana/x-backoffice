@@ -203,6 +203,7 @@ export const DashboardPage: React.FC = () => {
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="text-zinc-700">{store.storeType || 'General Retail'}</div>
+                      <div className="text-zinc-500 text-[11px]">{store.salesChannel === 'POS' ? 'POS only' : store.salesChannel === 'ONLINE' ? 'Online store only' : 'POS + Online'}</div>
                       <div className="text-zinc-400 text-[11px] mt-0.5">
                         {store.city || store.addressLine1 || 'Phnom Penh'}
                       </div>

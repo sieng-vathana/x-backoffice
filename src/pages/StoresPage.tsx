@@ -261,7 +261,7 @@ export const StoresPage: React.FC = () => {
               <thead className="bg-zinc-50/75 text-zinc-500 font-medium text-[11px] uppercase tracking-wider border-b border-zinc-200">
                 <tr>
                   <th className="px-5 py-2.5">Store / Business</th>
-                  <th className="px-5 py-2.5">Type & City</th>
+                  <th className="px-5 py-2.5">Type, sales mode & city</th>
                   <th className="px-5 py-2.5">Marketplace Status</th>
                   <th className="px-5 py-2.5">POS Status</th>
                   <th className="px-5 py-2.5">Listing Readiness</th>
@@ -281,6 +281,7 @@ export const StoresPage: React.FC = () => {
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="text-zinc-800">{store.storeType || 'Retail'}</div>
+                      <div className="text-zinc-500 text-[11px] mt-0.5">{store.salesChannel === 'POS' ? 'POS only' : store.salesChannel === 'ONLINE' ? 'Online store only' : 'POS + Online'}</div>
                       <div className="text-zinc-400 text-[11px] mt-0.5">{store.city || 'Phnom Penh'}</div>
                     </td>
                     <td className="px-5 py-3.5">

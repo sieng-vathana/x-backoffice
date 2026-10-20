@@ -17,6 +17,7 @@ export interface StoreResponse {
   name: string
   code: string
   storeType: string
+  salesChannel?: 'POS' | 'ONLINE' | 'BOTH' | null
   addressLine1?: string
   addressLine2?: string
   landmark?: string
