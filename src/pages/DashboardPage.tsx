@@ -5,6 +5,7 @@ import { storeService } from '../services/storeService'
 import { categoryService } from '../services/categoryService'
 import { brandService } from '../services/brandService'
 import { Badge } from '../components/ui/Badge'
+import { OfflineQueuePanel } from '../components/dashboard/OfflineQueuePanel'
 import { getStoreReadiness } from '../lib/storeReadiness'
 import { businessApprovalService } from '../services/businessApprovalService'
 import { suspensionService } from '../services/suspensionService'
@@ -91,6 +92,8 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      <OfflineQueuePanel />
 
       {(pendingBusinesses.length > 0 || pendingStores.length > 0 || storesNeedingChanges.length > 0) && (
         <div className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
