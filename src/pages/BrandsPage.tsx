@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { brandService } from '../services/brandService'
+import { mediaService, fileContentPath } from '../services/mediaService'
+import { resolveImageUrl } from '../lib/api'
+import { ImagePicker } from '../components/ImagePicker'
 import { Modal } from '../components/ui/Modal'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useToast } from '../context/ToastContext'
@@ -16,7 +19,7 @@ const BrandLogo: React.FC<{
     <div className="w-9 h-9 rounded-lg bg-zinc-100 border border-zinc-200 overflow-hidden flex items-center justify-center shrink-0 p-1">
       {logoUrl && !hasError ? (
         <img
-          src={logoUrl}
+          src={resolveImageUrl(logoUrl)}
           alt={name}
           className="w-full h-full object-contain"
           onError={() => setHasError(true)}
@@ -36,6 +39,7 @@ export const BrandsPage: React.FC = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<BrandResponse | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<BrandResponse | null>(null)
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
 
   const [form, setForm] = useState<CreateBrandRequest>({
     name: '',
@@ -66,10 +70,16 @@ export const BrandsPage: React.FC = () => {
   }, [brands, search])
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateBrandRequest) => brandService.createBrand(data),
+    mutationFn: async ({ data, imageFile }: { data: CreateBrandRequest; imageFile: File | null }) => {
+      const logoUrl = imageFile
+        ? fileContentPath((await mediaService.uploadImage(imageFile, 'brand')).id)
+        : data.logoUrl
+      return brandService.createBrand({ ...data, logoUrl })
+    },
     onSuccess: (b) => {
       success(`Brand "${b.name}" registered!`)
       setIsCreateOpen(false)
+      setSelectedImageFile(null)
       setForm({ name: '', code: '', logoUrl: '', description: '' })
       queryClient.invalidateQueries({ queryKey: ['brands'] })
     },
@@ -77,11 +87,16 @@ export const BrandsPage: React.FC = () => {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: CreateBrandRequest }) =>
-      brandService.updateBrand(id, data),
+    mutationFn: async ({ id, data, imageFile }: { id: number; data: CreateBrandRequest; imageFile: File | null }) => {
+      const logoUrl = imageFile
+        ? fileContentPath((await mediaService.uploadImage(imageFile, 'brand', id)).id)
+        : data.logoUrl
+      return brandService.updateBrand(id, { ...data, logoUrl })
+    },
     onSuccess: (b) => {
       success(`Brand "${b.name}" updated!`)
       setEditTarget(null)
+      setSelectedImageFile(null)
       queryClient.invalidateQueries({ queryKey: ['brands'] })
     },
     onError: (err: any) => error(err.message || 'Failed to update brand.'),
@@ -99,6 +114,7 @@ export const BrandsPage: React.FC = () => {
 
   const handleOpenEdit = (brand: BrandResponse) => {
     setEditTarget(brand)
+    setSelectedImageFile(null)
     setForm({
       name: brand.name,
       code: brand.code || '',
@@ -124,6 +140,7 @@ export const BrandsPage: React.FC = () => {
 
         <button
           onClick={() => {
+            setSelectedImageFile(null)
             setForm({ name: '', code: '', logoUrl: '', description: '' })
             setIsCreateOpen(true)
           }}
@@ -250,7 +267,10 @@ export const BrandsPage: React.FC = () => {
       {isCreateOpen && (
         <Modal
           isOpen={true}
-          onClose={() => setIsCreateOpen(false)}
+          onClose={() => {
+            setIsCreateOpen(false)
+            setSelectedImageFile(null)
+          }}
           title="Register Brand"
           subtitle="Add a brand identity available for catalog tagging"
         >
@@ -261,7 +281,7 @@ export const BrandsPage: React.FC = () => {
                 error('Brand name is required')
                 return
               }
-              createMutation.mutate(form)
+              createMutation.mutate({ data: form, imageFile: selectedImageFile })
             }}
             className="space-y-4"
           >
@@ -288,16 +308,11 @@ export const BrandsPage: React.FC = () => {
               />
             </div>
 
-            <div>
-              <label className="text-xs font-medium text-zinc-700 block mb-1.5">Logo URL</label>
-              <input
-                type="url"
-                value={form.logoUrl}
-                onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
-                placeholder="https://..."
-                className="w-full text-xs px-3 py-2 rounded-lg border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 transition bg-white"
-              />
-            </div>
+            <ImagePicker label="Brand logo" imageUrl={form.logoUrl} selectedFile={selectedImageFile}
+              onSelectFile={(file) => {
+                setSelectedImageFile(file)
+                if (!file) setForm((current) => ({ ...current, logoUrl: '' }))
+              }} disabled={createMutation.isPending} />
 
             <div>
               <label className="text-xs font-medium text-zinc-700 block mb-1.5">Description (Optional)</label>
@@ -312,7 +327,10 @@ export const BrandsPage: React.FC = () => {
             <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-zinc-100">
               <button
                 type="button"
-                onClick={() => setIsCreateOpen(false)}
+                onClick={() => {
+                  setIsCreateOpen(false)
+                  setSelectedImageFile(null)
+                }}
                 className="px-3.5 py-2 text-xs font-medium text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 transition"
               >
                 Cancel
@@ -334,13 +352,16 @@ export const BrandsPage: React.FC = () => {
       {editTarget && (
         <Modal
           isOpen={true}
-          onClose={() => setEditTarget(null)}
+          onClose={() => {
+            setEditTarget(null)
+            setSelectedImageFile(null)
+          }}
           title={`Edit Brand: ${editTarget.name}`}
         >
           <form
             onSubmit={(e) => {
               e.preventDefault()
-              updateMutation.mutate({ id: editTarget.id, data: form })
+              updateMutation.mutate({ id: editTarget.id, data: form, imageFile: selectedImageFile })
             }}
             className="space-y-4"
           >
@@ -365,15 +386,11 @@ export const BrandsPage: React.FC = () => {
               />
             </div>
 
-            <div>
-              <label className="text-xs font-medium text-zinc-700 block mb-1.5">Logo URL</label>
-              <input
-                type="url"
-                value={form.logoUrl}
-                onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
-                className="w-full text-xs px-3 py-2 rounded-lg border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 transition bg-white"
-              />
-            </div>
+            <ImagePicker label="Brand logo" imageUrl={form.logoUrl} selectedFile={selectedImageFile}
+              onSelectFile={(file) => {
+                setSelectedImageFile(file)
+                if (!file) setForm((current) => ({ ...current, logoUrl: '' }))
+              }} disabled={updateMutation.isPending} />
 
             <div>
               <label className="text-xs font-medium text-zinc-700 block mb-1.5">Description</label>
@@ -387,7 +404,10 @@ export const BrandsPage: React.FC = () => {
             <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-zinc-100">
               <button
                 type="button"
-                onClick={() => setEditTarget(null)}
+                onClick={() => {
+                  setEditTarget(null)
+                  setSelectedImageFile(null)
+                }}
                 className="px-3.5 py-2 text-xs font-medium text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 transition"
               >
                 Cancel

@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { categoryService } from '../services/categoryService'
+import { mediaService, fileContentPath } from '../services/mediaService'
+import { resolveImageUrl } from '../lib/api'
+import { ImagePicker } from '../components/ImagePicker'
 import { Modal } from '../components/ui/Modal'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { Badge } from '../components/ui/Badge'
@@ -31,7 +34,7 @@ const CategoryThumbnail: React.FC<{
     <div className="w-9 h-9 rounded-lg bg-zinc-100 border border-zinc-200 overflow-hidden flex items-center justify-center shrink-0 p-1">
       {image && !hasError ? (
         <img
-          src={image}
+          src={resolveImageUrl(image)}
           alt={name}
           className="w-full h-full object-contain"
           onError={() => setHasError(true)}
@@ -51,6 +54,7 @@ export const CategoriesPage: React.FC = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<MarketplaceCategoryResponse | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<MarketplaceCategoryResponse | null>(null)
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
 
   const [form, setForm] = useState<CreateCategoryRequest>({
     name: '',
@@ -81,10 +85,16 @@ export const CategoriesPage: React.FC = () => {
   }, [categories, search])
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateCategoryRequest) => categoryService.createCategory(data),
+    mutationFn: async ({ data, imageFile }: { data: CreateCategoryRequest; imageFile: File | null }) => {
+      const image = imageFile
+        ? fileContentPath((await mediaService.uploadImage(imageFile, 'category')).id)
+        : data.image
+      return categoryService.createCategory({ ...data, image })
+    },
     onSuccess: (cat) => {
       success(`Category "${cat.name}" created!`)
       setIsCreateOpen(false)
+      setSelectedImageFile(null)
       setForm({ name: '', code: '', image: '', featured: false })
       queryClient.invalidateQueries({ queryKey: ['categories'] })
     },
@@ -92,11 +102,16 @@ export const CategoriesPage: React.FC = () => {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: CreateCategoryRequest }) =>
-      categoryService.updateCategory(id, data),
+    mutationFn: async ({ id, data, imageFile }: { id: number; data: CreateCategoryRequest; imageFile: File | null }) => {
+      const image = imageFile
+        ? fileContentPath((await mediaService.uploadImage(imageFile, 'category', id)).id)
+        : data.image
+      return categoryService.updateCategory(id, { ...data, image })
+    },
     onSuccess: (cat) => {
       success(`Category "${cat.name}" updated!`)
       setEditTarget(null)
+      setSelectedImageFile(null)
       queryClient.invalidateQueries({ queryKey: ['categories'] })
     },
     onError: (err: any) => error(err.message || 'Failed to update category.'),
@@ -114,6 +129,7 @@ export const CategoriesPage: React.FC = () => {
 
   const handleOpenEdit = (cat: MarketplaceCategoryResponse) => {
     setEditTarget(cat)
+    setSelectedImageFile(null)
     setForm({
       name: cat.name,
       code: cat.code || '',
@@ -140,6 +156,7 @@ export const CategoriesPage: React.FC = () => {
 
         <button
           onClick={() => {
+            setSelectedImageFile(null)
             setForm({ name: '', code: '', image: '', featured: false })
             setIsCreateOpen(true)
           }}
@@ -274,7 +291,10 @@ export const CategoriesPage: React.FC = () => {
       {isCreateOpen && (
         <Modal
           isOpen={true}
-          onClose={() => setIsCreateOpen(false)}
+          onClose={() => {
+            setIsCreateOpen(false)
+            setSelectedImageFile(null)
+          }}
           title="Create Platform Category"
           subtitle="Add a standardized taxonomy for public marketplace navigation"
         >
@@ -285,7 +305,7 @@ export const CategoriesPage: React.FC = () => {
                 error('Category name is required')
                 return
               }
-              createMutation.mutate(form)
+              createMutation.mutate({ data: form, imageFile: selectedImageFile })
             }}
             className="space-y-4"
           >
@@ -312,16 +332,11 @@ export const CategoriesPage: React.FC = () => {
               />
             </div>
 
-            <div>
-              <label className="text-xs font-medium text-zinc-700 block mb-1.5">Icon / Image URL</label>
-              <input
-                type="url"
-                value={form.image}
-                onChange={(e) => setForm({ ...form, image: e.target.value })}
-                placeholder="https://..."
-                className="w-full text-xs px-3 py-2 rounded-lg border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 transition bg-white"
-              />
-            </div>
+            <ImagePicker label="Category image" imageUrl={form.image} selectedFile={selectedImageFile}
+              onSelectFile={(file) => {
+                setSelectedImageFile(file)
+                if (!file) setForm((current) => ({ ...current, image: '' }))
+              }} disabled={createMutation.isPending} />
 
             <div className="flex items-center gap-2 pt-1">
               <input
@@ -339,7 +354,10 @@ export const CategoriesPage: React.FC = () => {
             <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-zinc-100">
               <button
                 type="button"
-                onClick={() => setIsCreateOpen(false)}
+                onClick={() => {
+                  setIsCreateOpen(false)
+                  setSelectedImageFile(null)
+                }}
                 className="px-3.5 py-2 text-xs font-medium text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 transition"
               >
                 Cancel
@@ -361,13 +379,16 @@ export const CategoriesPage: React.FC = () => {
       {editTarget && (
         <Modal
           isOpen={true}
-          onClose={() => setEditTarget(null)}
+          onClose={() => {
+            setEditTarget(null)
+            setSelectedImageFile(null)
+          }}
           title={`Edit Category: ${editTarget.name}`}
         >
           <form
             onSubmit={(e) => {
               e.preventDefault()
-              updateMutation.mutate({ id: editTarget.id, data: form })
+              updateMutation.mutate({ id: editTarget.id, data: form, imageFile: selectedImageFile })
             }}
             className="space-y-4"
           >
@@ -392,15 +413,11 @@ export const CategoriesPage: React.FC = () => {
               />
             </div>
 
-            <div>
-              <label className="text-xs font-medium text-zinc-700 block mb-1.5">Image URL</label>
-              <input
-                type="url"
-                value={form.image}
-                onChange={(e) => setForm({ ...form, image: e.target.value })}
-                className="w-full text-xs px-3 py-2 rounded-lg border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 transition bg-white"
-              />
-            </div>
+            <ImagePicker label="Category image" imageUrl={form.image} selectedFile={selectedImageFile}
+              onSelectFile={(file) => {
+                setSelectedImageFile(file)
+                if (!file) setForm((current) => ({ ...current, image: '' }))
+              }} disabled={updateMutation.isPending} />
 
             <div className="flex items-center gap-2 pt-1">
               <input
@@ -418,7 +435,10 @@ export const CategoriesPage: React.FC = () => {
             <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-zinc-100">
               <button
                 type="button"
-                onClick={() => setEditTarget(null)}
+                onClick={() => {
+                  setEditTarget(null)
+                  setSelectedImageFile(null)
+                }}
                 className="px-3.5 py-2 text-xs font-medium text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 transition"
               >
                 Cancel
