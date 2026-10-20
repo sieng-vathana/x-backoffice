@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
+import { RealtimeBridge } from '../realtime/RealtimeBridge'
 import { storeService } from '../../services/storeService'
 import { businessApprovalService } from '../../services/businessApprovalService'
 import { LocaleSwitcher } from '../../i18n/LocaleSwitcher'
@@ -38,14 +39,13 @@ export const AppLayout: React.FC = () => {
   const { data: pendingStores = [] } = useQuery({
     queryKey: ['pendingStores'],
     queryFn: () => storeService.getPendingMarketplaceStores(),
-    refetchInterval: 15000,
   })
 
   const { data: pendingBusinesses = [] } = useQuery({
     queryKey: ['pendingBusinesses'],
     queryFn: businessApprovalService.pending,
-    refetchInterval: 15000,
   })
+  // Both lists reload when a merchant signs up or applies, pushed through RealtimeBridge.
 
   const pendingCount = pendingStores.length + pendingBusinesses.length
 
@@ -154,6 +154,7 @@ export const AppLayout: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-canvas text-ink antialiased">
+      <RealtimeBridge />
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 bg-[#1b2138]/50 backdrop-blur-[2px] lg:hidden" onClick={() => setMobileMenuOpen(false)} />
       )}
