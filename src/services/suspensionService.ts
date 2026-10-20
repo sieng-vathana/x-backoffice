@@ -16,6 +16,25 @@ export interface ManagedStore extends StoreResponse {
   suspensionReason?: string | null
 }
 
+export interface MerchantOwnerProfile {
+  id: number
+  username: string
+  fullName?: string | null
+  phone?: string | null
+  email?: string | null
+  profileImage?: string | null
+  status?: number | null
+  lastLogin?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+}
+
+export interface MerchantProfile {
+  merchant: ManagedMerchant
+  owner: MerchantOwnerProfile
+  stores: ManagedStore[]
+}
+
 export type MerchantFilter = '' | 'approved' | 'pending' | 'rejected' | 'suspended'
 export type StoreFilter = '' | 'active' | 'suspended'
 
@@ -30,6 +49,12 @@ const query = (params: Record<string, string | number | undefined>) => {
 
 /** Suspends or reinstates merchants and stores. The merchant is told by Telegram and email with the reason. */
 export const suspensionService = {
+  async merchantProfile(id: number): Promise<MerchantProfile> {
+    const response = await api.request<ApiResponse<MerchantProfile>>(`/admin/merchants/${id}/profile`)
+    if (!response.data) throw new Error(response.message || 'Could not load the merchant profile.')
+    return response.data
+  },
+
   async merchants(status: MerchantFilter, search: string): Promise<ManagedMerchant[]> {
     const response = await api.request<ApiResponse<ManagedMerchant[]>>(`/admin/merchants${query({ status, search: search.trim() })}`)
     return response.data ?? []

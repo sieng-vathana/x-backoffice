@@ -9,9 +9,21 @@ export interface BusinessApproval {
   defaultCurrencyCode: string
   taxRegistrationNumber?: string | null
   taxRegistrationLabel?: string | null
+  usdToKhrExchangeRate?: number | null
+  defaultTaxId?: number | null
+  pricesIncludeTax?: boolean | null
   timeZone: string
+  fiscalYearStartMonth?: number | null
   status: number
+  updatedAt?: string | null
+  bakongAccountId?: string | null
   reviewReason?: string | null
+  reviewedByUserId?: number | null
+  reviewedAt?: string | null
+  suspended?: boolean
+  suspendedAt?: string | null
+  suspensionReason?: string | null
+  suspendedByUserId?: number | null
   createdAt?: string | null
   /** STARTER, BUSINESS or PRO; null for merchants created before plans (treated as Pro). */
   plan?: string | null

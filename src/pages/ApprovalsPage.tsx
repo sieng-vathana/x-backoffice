@@ -6,6 +6,7 @@ import { Modal } from '../components/ui/Modal'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { StoreReadinessPanel } from '../components/StoreReadinessPanel'
 import { RequestChangesDialog } from '../components/RequestChangesDialog'
+import { MerchantProfileDialog } from '../components/MerchantProfileDialog'
 import { useToast } from '../context/ToastContext'
 import type { StoreResponse } from '../types/store'
 import { getStoreReadiness } from '../lib/storeReadiness'
@@ -25,6 +26,7 @@ export const ApprovalsPage: React.FC = () => {
   const [businessSearch, setBusinessSearch] = useState('')
   const [approveBusinessTarget, setApproveBusinessTarget] = useState<BusinessApproval | null>(null)
   const [rejectBusinessTarget, setRejectBusinessTarget] = useState<BusinessApproval | null>(null)
+  const [businessDetailsTarget, setBusinessDetailsTarget] = useState<BusinessApproval | null>(null)
   const [businessRejectReason, setBusinessRejectReason] = useState('')
 
   const { data: pendingBusinesses = [], isLoading: loadingBusinesses, isError: businessesFailed, refetch: refetchBusinesses } = useQuery({
@@ -37,6 +39,7 @@ export const ApprovalsPage: React.FC = () => {
     onSuccess: (business) => {
       success(`Merchant "${business.name}" approved. Its stores can now be reviewed for the marketplace.`)
       setApproveBusinessTarget(null)
+      setBusinessDetailsTarget(null)
       queryClient.invalidateQueries({ queryKey: ['pendingBusinesses'] })
     },
     onError: (err: Error) => error(err.message || 'Failed to approve merchant.'),
@@ -47,6 +50,7 @@ export const ApprovalsPage: React.FC = () => {
     onSuccess: (business) => {
       success(`Merchant "${business.name}" was rejected.`)
       setRejectBusinessTarget(null)
+      setBusinessDetailsTarget(null)
       setBusinessRejectReason('')
       queryClient.invalidateQueries({ queryKey: ['pendingBusinesses'] })
     },
@@ -184,6 +188,7 @@ export const ApprovalsPage: React.FC = () => {
                     <div><span className="block text-zinc-400">Plan chosen</span>{business.plan ? `${business.plan.charAt(0)}${business.plan.slice(1).toLowerCase()} · ${business.billingCycle?.toUpperCase() === 'YEARLY' ? 'yearly' : 'monthly'}` : 'Not chosen'}</div>
                   </div>
                   <div className="mt-4 flex justify-end gap-2 border-t border-zinc-100 pt-4">
+                    <button type="button" onClick={() => setBusinessDetailsTarget(business)} className="mr-auto rounded-lg border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50"><i className="ri-file-user-line mr-1" />Full profile</button>
                     <button type="button" onClick={() => { setRejectBusinessTarget(business); setBusinessRejectReason('') }} className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50">Reject</button>
                     <button type="button" onClick={() => setApproveBusinessTarget(business)} className="rounded-lg bg-zinc-900 px-3 py-2 text-xs font-medium text-white hover:bg-zinc-800">Approve merchant</button>
                   </div>
@@ -559,6 +564,14 @@ export const ApprovalsPage: React.FC = () => {
       >
         <textarea value={businessRejectReason} onChange={(event) => setBusinessRejectReason(event.target.value)} maxLength={1000} placeholder="Reason for rejection" aria-label="Rejection reason" className="min-h-24 w-full rounded-lg border border-zinc-300 p-3 text-sm" />
       </ConfirmDialog>}
+      <MerchantProfileDialog
+        merchant={businessDetailsTarget}
+        onClose={() => setBusinessDetailsTarget(null)}
+        actions={businessDetailsTarget ? <>
+          <button type="button" onClick={() => { setRejectBusinessTarget(businessDetailsTarget); setBusinessRejectReason(''); setBusinessDetailsTarget(null) }} className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50">Reject application</button>
+          <button type="button" onClick={() => { setApproveBusinessTarget(businessDetailsTarget); setBusinessDetailsTarget(null) }} className="rounded-lg bg-zinc-900 px-3 py-2 text-xs font-medium text-white hover:bg-zinc-800">Approve merchant</button>
+        </> : undefined}
+      />
     </div>
   )
 }

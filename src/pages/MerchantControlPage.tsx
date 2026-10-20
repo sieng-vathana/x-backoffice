@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Badge } from '../components/ui/Badge'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { Modal } from '../components/ui/Modal'
+import { MerchantProfileDialog } from '../components/MerchantProfileDialog'
 import { useToast } from '../context/ToastContext'
 import {
   suspensionService,
@@ -76,6 +77,7 @@ export const MerchantControlPage: React.FC = () => {
   const [reinstateTarget, setReinstateTarget] = useState<Target | null>(null)
   const [reason, setReason] = useState('')
   const [planTarget, setPlanTarget] = useState<ManagedMerchant | null>(null)
+  const [profileTarget, setProfileTarget] = useState<ManagedMerchant | null>(null)
   const [planChoice, setPlanChoice] = useState('BUSINESS')
   const [cycleChoice, setCycleChoice] = useState('MONTHLY')
 
@@ -204,6 +206,7 @@ export const MerchantControlPage: React.FC = () => {
       ) : tab === 'merchants' ? (
         <MerchantList
           merchants={merchantsQuery.data ?? []}
+          onShowProfile={setProfileTarget}
           onSuspend={(item) => { setReason(''); setSuspendTarget({ kind: 'merchant', item }) }}
           onReinstate={(item) => setReinstateTarget({ kind: 'merchant', item })}
           onShowStores={(merchant) => { setTab('stores'); setStoreFilter(''); setSearch(merchant.code) }}
@@ -330,12 +333,24 @@ export const MerchantControlPage: React.FC = () => {
         variant="primary"
         isLoading={reinstateMutation.isPending}
       />
+
+      <MerchantProfileDialog
+        merchant={profileTarget}
+        onClose={() => setProfileTarget(null)}
+        actions={profileTarget ? <>
+          <button type="button" onClick={() => { openPlan(profileTarget); setProfileTarget(null) }} className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50"><i className="ri-vip-crown-2-line mr-1" />Change plan</button>
+          {profileTarget.suspended
+            ? <button type="button" onClick={() => { setReinstateTarget({ kind: 'merchant', item: profileTarget }); setProfileTarget(null) }} className="rounded-lg bg-zinc-900 px-3 py-2 text-xs font-medium text-white hover:bg-zinc-800">Reinstate merchant</button>
+            : <button type="button" onClick={() => { setReason(''); setSuspendTarget({ kind: 'merchant', item: profileTarget }); setProfileTarget(null) }} className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50">Suspend merchant</button>}
+        </> : undefined}
+      />
     </div>
   )
 }
 
-function MerchantList({ merchants, onSuspend, onReinstate, onShowStores, onChangePlan }: {
+function MerchantList({ merchants, onShowProfile, onSuspend, onReinstate, onShowStores, onChangePlan }: {
   merchants: ManagedMerchant[]
+  onShowProfile: (merchant: ManagedMerchant) => void
   onSuspend: (merchant: ManagedMerchant) => void
   onReinstate: (merchant: ManagedMerchant) => void
   onShowStores: (merchant: ManagedMerchant) => void
@@ -385,6 +400,9 @@ function MerchantList({ merchants, onSuspend, onReinstate, onShowStores, onChang
               </div>
             ) : null}
             <div className="mt-4 flex justify-end gap-2 border-t border-zinc-100 pt-4">
+              <button type="button" onClick={() => onShowProfile(merchant)} className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50">
+                <i className="ri-file-user-line mr-1" /> Details
+              </button>
               <button type="button" onClick={() => onShowStores(merchant)} className="mr-auto rounded-lg px-2 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-100">
                 <i className="ri-store-2-line" /> Stores
               </button>
