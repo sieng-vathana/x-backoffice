@@ -150,7 +150,11 @@ export function MerchantProfileDialog({
               const map = mapLinks(store)
               const isMapOpen = expandedMaps.has(store.id)
               const hours = store.openingHours?.days ? Object.entries(store.openingHours.days) : []
-              const primaryImage = store.images?.find((image) => image.isPrimary)?.url ?? store.images?.[0]?.url
+              const storeImages = (store.images ?? []).flatMap((image) => {
+                const source = (image.imageUrl ?? image.url)?.trim()
+                return source ? [{ ...image, source }] : []
+              }).sort((left, right) => Number(right.isPrimary) - Number(left.isPrimary) || (left.sortOrder ?? 0) - (right.sortOrder ?? 0))
+              const primaryImage = storeImages[0]?.source
               return (
                 <article key={store.id} className="overflow-hidden rounded-xl border border-zinc-200">
                   <div className="flex flex-wrap items-start gap-3 p-4">
@@ -165,6 +169,18 @@ export function MerchantProfileDialog({
                       <p className="mt-2 text-xs text-zinc-700">{location || 'Address not provided'}</p>
                     </div>
                   </div>
+                  {storeImages.length > 0 ? (
+                    <div className="border-t border-zinc-100 px-4 py-3">
+                      <div className="mb-2 text-[11px] font-medium text-zinc-400">Shop photos · {storeImages.length}</div>
+                      <div className="flex flex-wrap gap-2">
+                        {storeImages.slice(0, 6).map((image, index) => (
+                          <a key={image.id ?? `${store.id}-${index}`} href={resolveImageUrl(image.source)} target="_blank" rel="noreferrer" className="block h-20 w-20 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100">
+                            <img src={resolveImageUrl(image.source)} alt={`${store.name} shop ${index + 1}`} loading="lazy" className="h-full w-full object-cover" onError={(event) => { event.currentTarget.closest('a')?.classList.add('hidden') }} />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                   <div className="grid gap-3 border-t border-zinc-100 bg-zinc-50/70 p-4 text-xs sm:grid-cols-2 lg:grid-cols-4">
                     <ContactInfo label="Store email" value={store.email} href={store.email ? `mailto:${store.email}` : undefined} />
                     <ContactInfo label="Phone" value={store.phone} href={store.phone ? `tel:${store.phone}` : undefined} />

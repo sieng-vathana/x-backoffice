@@ -57,7 +57,7 @@ export function getStoreReadiness(store: StoreResponse): { items: ReadinessItem[
       key: 'photo',
       label: 'Storefront photo',
       help: 'Upload at least one storefront image for the marketplace listing.',
-      complete: Boolean(store.images?.some((image) => image.url?.trim())),
+      complete: Boolean(store.images?.some((image) => (image.imageUrl ?? image.url)?.trim())),
     },
   ]
 

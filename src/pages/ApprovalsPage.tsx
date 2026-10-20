@@ -11,6 +11,7 @@ import { useToast } from '../context/ToastContext'
 import type { StoreResponse } from '../types/store'
 import { getStoreReadiness } from '../lib/storeReadiness'
 import { businessApprovalService, type BusinessApproval } from '../services/businessApprovalService'
+import { resolveImageUrl } from '../lib/api'
 
 export const ApprovalsPage: React.FC = () => {
   const queryClient = useQueryClient()
@@ -313,7 +314,7 @@ export const ApprovalsPage: React.FC = () => {
                       {store.images.slice(0, 4).map((img, idx) => (
                         <img
                           key={idx}
-                          src={img.url}
+                          src={resolveImageUrl(img.imageUrl ?? img.url)}
                           alt="Store preview"
                           className="w-12 h-12 rounded-md object-cover border border-zinc-200 shrink-0"
                           onError={(e) => {
@@ -444,12 +445,12 @@ export const ApprovalsPage: React.FC = () => {
                   {activeDossier.images.map((img, idx) => (
                     <a
                       key={idx}
-                      href={img.url}
+                      href={resolveImageUrl(img.imageUrl ?? img.url)}
                       target="_blank"
                       rel="noreferrer"
                       className="block group relative rounded-lg overflow-hidden border border-zinc-200 aspect-video bg-zinc-100"
                     >
-                      <img src={img.url} alt="Store" className="w-full h-full object-cover" />
+                      <img src={resolveImageUrl(img.imageUrl ?? img.url)} alt="Store" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[11px] font-medium transition">
                         View Full Photo
                       </div>

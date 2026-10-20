@@ -1,7 +1,11 @@
 ﻿export interface StoreImageResponse {
   id?: number
-  url: string
+  /** Store service serializes image references as `imageUrl`. `url` supports old cached responses. */
+  imageUrl?: string
+  url?: string
+  fileId?: number | null
   isPrimary?: boolean
+  sortOrder?: number | null
 }
 
 export type MarketplaceStatus = 'NOT_LISTED' | 'PENDING_REVIEW' | 'NEEDS_CHANGES' | 'APPROVED' | 'REJECTED'
