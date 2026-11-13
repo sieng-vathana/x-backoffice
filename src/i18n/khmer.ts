@@ -2777,7 +2777,7 @@ export const khmerTranslations: Record<string, string> = {
   "Weekly Schedule": "កាលវិភាគប្រចាំសប្តាហ៍",
   "WELCOME BACK": "សូមស្វាគមន៍ការត្រឡប់មកវិញ",
   "Welcome back,": "សូមស្វាគមន៍ការត្រឡប់មកវិញ,",
-  "Welcome to X Platform Back-Office!": "សូមស្វាគមន៍មកកាន់ការិយាល័យកណ្តាល X Platform!",
+  "Welcome to TinhLuk Backoffice!": "សូមស្វាគមន៍មកកាន់ការិយាល័យកណ្តាល TinhLuk!",
   "What needs to happen?": "តើត្រូវធ្វើអ្វី?",
   "When a customer places an order in your online store.": "នៅពេលអតិថិជនបញ្ជាទិញនៅហាងអនឡាញរបស់អ្នក។",
   "When a customer's KHQR payment arrives in your Bakong account.": "នៅពេលប្រាក់ KHQR របស់អតិថិជនចូលដល់គណនីបាគងរបស់អ្នក។",

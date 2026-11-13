@@ -35,7 +35,7 @@ export const SignInPage: React.FC = () => {
       } else {
         await signIn({ username: username.trim(), password })
       }
-      success('Welcome to X Platform Back-Office!')
+      success('Welcome to TinhLuk Backoffice!')
       navigate('/')
     } catch (err: any) {
       if (err instanceof MfaRequiredError) {
@@ -98,9 +98,9 @@ export const SignInPage: React.FC = () => {
         <div className="pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full bg-[#8b84e8]/30 blur-3xl" />
         <div className="relative">
           <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-brand text-lg font-extrabold shadow-lg shadow-brand/40">X</div>
+            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-brand text-lg font-extrabold shadow-lg shadow-brand/40">T</div>
             <div>
-              <div className="text-lg font-extrabold leading-none">X Platform</div>
+              <div className="text-lg font-extrabold leading-none">TinhLuk</div>
               <div className="mt-1 text-sm text-white/60">Backoffice</div>
             </div>
           </div>
@@ -207,7 +207,7 @@ export const SignInPage: React.FC = () => {
           <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-400">
             <span>Production Environment</span>
             <span className="font-mono text-[10px] bg-zinc-100 px-1.5 py-0.5 rounded text-zinc-600">
-              x-platform
+              tinhluk
             </span>
           </div>
         </div>

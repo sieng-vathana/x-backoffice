@@ -167,10 +167,10 @@ export const AppLayout: React.FC = () => {
         <div className="flex h-[68px] items-center justify-between gap-2 border-b border-white/10 px-4">
           <div className={`flex min-w-0 items-center gap-3 ${collapsed ? 'lg:mx-auto' : ''}`}>
             <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand text-sm font-extrabold text-white shadow-lg shadow-brand/40">
-              X
+              T
             </div>
             <div className={collapsed ? 'lg:hidden' : ''}>
-              <div className="text-sm font-extrabold leading-none text-white">X Platform</div>
+              <div className="text-sm font-extrabold leading-none text-white">TinhLuk</div>
               <div className="mt-1 text-[11px] text-slate-400">Backoffice</div>
             </div>
           </div>
